@@ -8,4 +8,6 @@ const QuizSchema = new mongoose.Schema({
 	passedScore: { type: Number },
 });
 
-module.exports = mongoose.model("Quiz", QuizSchema);
+const Quiz = mongoose.model("Quiz", QuizSchema);
+
+module.exports = Quiz;
