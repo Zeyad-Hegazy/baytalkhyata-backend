@@ -5,6 +5,7 @@ const QuizSchema = new mongoose.Schema({
 	level: { type: mongoose.Schema.ObjectId, ref: "Level" },
 	questions: [{ type: mongoose.Schema.ObjectId, ref: "Question" }],
 	totalScore: { type: Number, default: 0 },
+	passedScore: { type: Number },
 });
 
 module.exports = mongoose.model("Quiz", QuizSchema);
