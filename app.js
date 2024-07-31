@@ -12,7 +12,11 @@ const globalError = require("./middlewares/errorMiddleware.js");
 const isAuth = require("./middlewares/isAuth.js");
 const isRole = require("./middlewares/isRole.js");
 
+const { ADMIN } = require("./constants/userRoles.js");
+
 const authRoutes = require("./routes/authRouter.js");
+const adminRoutes = require("./routes/adminRouter.js");
+const userRoutes = require("./routes/userRouter.js");
 
 dbConnection();
 
@@ -83,6 +87,8 @@ if (process.env.NODE_ENV === "development") {
 }
 
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/admin", isAuth, isRole([{ value: ADMIN }]), adminRoutes);
+app.use("/api/v1/user", isAuth, isRole([{ value: "user" }]), userRoutes);
 
 app.use("*", (req, res, next) => {
 	next(new ApiError(`Can't find this route ${req.originalUrl}`, 400));

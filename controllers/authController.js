@@ -2,6 +2,7 @@ const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/AdminModel");
 const ApiError = require("../util/ApiError");
+const User = require("../models/UserModel");
 
 const buildToken = (user) => {
 	const expiresIn = 86400;
@@ -11,6 +12,7 @@ const buildToken = (user) => {
 		{
 			user: {
 				_id: user._id,
+				userName: user.userName || "Admin",
 				role: user.role,
 			},
 		},
@@ -45,7 +47,7 @@ const extractUserInfo = (res, user) => {
 // @access Public
 exports.login = async (req, res, next) => {
 	try {
-		const { email, password } = req.body;
+		const { email, phone, password } = req.body;
 
 		const admin = await loginUser(Admin, email, password);
 		if (admin) {
@@ -54,6 +56,36 @@ exports.login = async (req, res, next) => {
 				status: "success",
 				result: {
 					user: extractUserInfo(res, admin),
+					token,
+				},
+				message: "Logged in successfully",
+			});
+		}
+
+		const user = await User.findOne({ phone });
+		const isPasswordCorrect = await bcryptjs.compare(password, user.password);
+		if (isPasswordCorrect) {
+			const expiresIn = 86400;
+
+			const token = jwt.sign(
+				{
+					user: {
+						_id: user._id,
+						userName: user.userName,
+						role: user.role,
+					},
+				},
+				process.env.JWT_SECRET_KEY,
+				{ expiresIn }
+			);
+			return res.status(200).json({
+				status: "success",
+				result: {
+					user: {
+						_id: user?._id,
+						phone: user?.phone,
+						createdAt: user?.createdAt,
+					},
 					token,
 				},
 				message: "Logged in successfully",
