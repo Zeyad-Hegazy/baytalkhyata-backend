@@ -1,15 +1,16 @@
+const mongoose = require("mongoose");
 const User = require("../models/UserModel");
 const Diploma = require("../models/DiplomaModel");
 const ApiError = require("../util/ApiError");
 const bcryptjs = require("bcryptjs");
 
 exports.createUser = async (req, res, next) => {
-	const { userName, password, phone } = req.body;
+	const { userName, password, phone, email } = req.body;
 
 	try {
-		const existingUserName = await User.find({ userName });
-		if (existingUserName) {
-			return next(new ApiError("This user name already used", 400));
+		const existingEmail = await User.findOne({ email });
+		if (existingEmail) {
+			return next(new ApiError("This email already used", 400));
 		}
 
 		const hashedPassword = await bcryptjs.hash(password, 12);
@@ -17,6 +18,7 @@ exports.createUser = async (req, res, next) => {
 		const newUser = await User.create({
 			userName,
 			phone,
+			email,
 			password: hashedPassword,
 		});
 
@@ -25,6 +27,7 @@ exports.createUser = async (req, res, next) => {
 			result: {
 				userName: newUser.userName,
 				phone: newUser.phone,
+				email: newUser.email,
 			},
 			success: true,
 			message: "new user created successfully",
@@ -43,29 +46,6 @@ exports.getUsers = async (req, res, next) => {
 		return res.status(200).json({
 			status: "success",
 			result: users,
-			success: true,
-			message: "success",
-		});
-	} catch (error) {
-		next(new ApiError("somthing went wrong " + error, 500));
-	}
-};
-
-exports.getUser = async (req, res, next) => {
-	try {
-		const { userId } = req.params;
-
-		if (!userId) {
-			return next(new ApiError("user not found by this id " + userId, 404));
-		}
-
-		const user = await User.findById(userId).select("-password");
-
-		user.image = processImage(res, user, "user");
-
-		return res.status(200).json({
-			status: "success",
-			result: user,
 			success: true,
 			message: "success",
 		});

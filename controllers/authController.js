@@ -12,7 +12,6 @@ const buildToken = (user) => {
 		{
 			user: {
 				_id: user._id,
-				userName: user.userName || "Admin",
 				role: user.role,
 			},
 		},
@@ -47,7 +46,7 @@ const extractUserInfo = (res, user) => {
 // @access Public
 exports.login = async (req, res, next) => {
 	try {
-		const { email, phone, password } = req.body;
+		const { email, password } = req.body;
 
 		const admin = await loginUser(Admin, email, password);
 		if (admin) {
@@ -62,36 +61,19 @@ exports.login = async (req, res, next) => {
 			});
 		}
 
-		const user = await User.findOne({ phone });
-		const isPasswordCorrect = await bcryptjs.compare(password, user.password);
-		if (isPasswordCorrect) {
-			const expiresIn = 86400;
+		const user = await loginUser(User, email, password);
 
-			const token = jwt.sign(
-				{
-					user: {
-						_id: user._id,
-						userName: user.userName,
-						role: user.role,
-					},
-				},
-				process.env.JWT_SECRET_KEY,
-				{ expiresIn }
-			);
+		if (user) {
+			const token = buildToken(user).token;
 			return res.status(200).json({
 				status: "success",
 				result: {
-					user: {
-						_id: user?._id,
-						phone: user?.phone,
-						createdAt: user?.createdAt,
-					},
+					user: extractUserInfo(res, user),
 					token,
 				},
 				message: "Logged in successfully",
 			});
 		}
-
 		return next(new ApiError("User Not Found or password is incorrect", 404));
 	} catch (error) {
 		next(new ApiError("Something went wrong " + error, 500));
