@@ -4,9 +4,9 @@ const ProductSchema = new mongoose.Schema(
 	{
 		title: { type: String, required: true },
 		description: { type: String },
-		coverImage: { type: String },
+		image: { type: String },
 		points: { type: Number, required: true },
-		createdBy: { type: mongoose.Schema.ObjectId, ref: "Admin" },
+		// createdBy: { type: mongoose.Schema.ObjectId, ref: "Admin" },
 	},
 	{ timestamps: true }
 );

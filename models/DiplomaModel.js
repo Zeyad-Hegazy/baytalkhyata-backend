@@ -7,9 +7,9 @@ const DiplomaSchema = new mongoose.Schema(
 		description: { type: String },
 		totalHours: Number,
 		certificateTemplate: { type: String },
-		chapters: [{ type: mongoose.Schema.ObjectId, ref: "Chapter" }],
+		chapters: [{ type: mongoose.Schema.ObjectId, ref: "Chapter", default: [] }],
 		totalPoints: { type: Number, default: 0 },
-		createdBy: { type: mongoose.Schema.ObjectId, ref: "Admin" },
+		// createdBy: { type: mongoose.Schema.ObjectId, ref: "Admin" },
 	},
 	{ timestamps: true }
 );

@@ -10,6 +10,9 @@ const UserSchema = new mongoose.Schema(
 		enrolledDiplomas: [
 			{ type: mongoose.Schema.ObjectId, ref: "Diploma", default: [] },
 		],
+		ownedProdcuts: [
+			{ type: mongoose.Schema.ObjectId, ref: "Product", default: [] },
+		],
 		role: { type: String, default: "user" },
 		// completedItems: [{ type: mongoose.Schema.ObjectId, ref: "Item" }],
 	},
