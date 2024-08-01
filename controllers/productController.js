@@ -1,5 +1,5 @@
 const Product = require("../models/ProductModel");
-const User = require("../models/UserModel");
+const Student = require("../models/StudentModel");
 const ApiError = require("../util/ApiError");
 const { saveAndDeleteImage, deleteImage } = require("../util/imageUtil");
 
@@ -164,7 +164,7 @@ exports.redeemProduct = async (req, res, next) => {
 	const { productId } = req.params;
 
 	try {
-		const user = await User.findById(req.user._id);
+		const user = await Student.findById(req.user._id);
 		if (!user) {
 			return next(new ApiError("user not found", 404));
 		}
@@ -202,7 +202,7 @@ exports.giftProduct = async (req, res, next) => {
 	const { userId } = req.body;
 
 	try {
-		const user = await User.findById(userId);
+		const user = await Student.findById(userId);
 		if (!user) {
 			return next(new ApiError("user not found", 404));
 		}

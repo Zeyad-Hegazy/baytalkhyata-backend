@@ -3,13 +3,13 @@ const express = require("express");
 const router = express.Router();
 
 const {
-	createUser,
-	getUsers,
-	getUser,
-	deleteUser,
-	deleteMenyUsers,
+	createStudent,
+	getStudents,
+	getStudent,
+	deleteStudent,
+	deleteMenyStudents,
 	assignDiploma,
-} = require("../controllers/userController");
+} = require("../controllers/studentController");
 
 const {
 	createProduct,
@@ -23,10 +23,10 @@ const {
 
 const { pagination } = require("../middlewares/pagination");
 
-router.delete("/user/meny", deleteMenyUsers);
-router.patch("/user/assign/:userId", assignDiploma);
-router.route("/user").post(createUser).get(pagination, getUsers);
-router.route("/user/:userId").get(getUser).delete(deleteUser);
+router.delete("/student/meny", deleteMenyStudents);
+router.patch("/student/assign/:userId", assignDiploma);
+router.route("/student").post(createStudent).get(pagination, getStudents);
+router.route("/student/:userId").get(getStudent).delete(deleteStudent);
 
 router.patch("/product/gift/:productId", giftProduct);
 router.delete("/product/meny", deleteMenyProducts);

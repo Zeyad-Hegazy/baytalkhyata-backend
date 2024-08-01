@@ -12,11 +12,11 @@ const {
 	signiupAdmin,
 } = require("../controllers/authController");
 
-const { createUser } = require("../controllers/userController");
+const { createStudent } = require("../controllers/studentController");
 
 router.post("/login", login);
 router.post("/logout", isAuth, logout);
-router.post("/signup", createUser);
+router.post("/signup", createStudent);
 router.post("/signup/admin", isAuth, isRole([{ value: ADMIN }]), signiupAdmin);
 
 module.exports = router;

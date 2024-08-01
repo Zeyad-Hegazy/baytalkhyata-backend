@@ -2,7 +2,7 @@ const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/AdminModel");
 const ApiError = require("../util/ApiError");
-const User = require("../models/UserModel");
+const Student = require("../models/StudentModel");
 
 const buildToken = (user) => {
 	const expiresIn = 86400;
@@ -41,9 +41,6 @@ const extractUserInfo = (res, user) => {
 	};
 };
 
-// @desc login to BaytAlkyata
-// @route POST /api/v1/auth/login
-// @access Public
 exports.login = async (req, res, next) => {
 	try {
 		const { email, password } = req.body;
@@ -61,8 +58,7 @@ exports.login = async (req, res, next) => {
 			});
 		}
 
-		const user = await loginUser(User, email, password);
-
+		const user = await loginUser(Student, email, password);
 		if (user) {
 			const token = buildToken(user).token;
 			return res.status(200).json({

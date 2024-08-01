@@ -1,22 +1,22 @@
 const mongoose = require("mongoose");
-const User = require("../models/UserModel");
+const Student = require("../models/StudentModel");
 const Diploma = require("../models/DiplomaModel");
 const ApiError = require("../util/ApiError");
 const bcryptjs = require("bcryptjs");
 
-exports.createUser = async (req, res, next) => {
-	const { userName, password, phone, email } = req.body;
+exports.createStudent = async (req, res, next) => {
+	const { fullName, password, phone, email } = req.body;
 
 	try {
-		const existingEmail = await User.findOne({ email });
+		const existingEmail = await Student.findOne({ email });
 		if (existingEmail) {
 			return next(new ApiError("This email already used", 400));
 		}
 
 		const hashedPassword = await bcryptjs.hash(password, 12);
 
-		const newUser = await User.create({
-			userName,
+		const newUser = await Student.create({
+			fullName,
 			phone,
 			email,
 			password: hashedPassword,
@@ -25,27 +25,30 @@ exports.createUser = async (req, res, next) => {
 		return res.status(201).json({
 			status: "success",
 			result: {
-				userName: newUser.userName,
+				fullName: newUser.fullName,
 				phone: newUser.phone,
 				email: newUser.email,
 			},
 			success: true,
-			message: "new user created successfully",
+			message: "new student created successfully",
 		});
 	} catch (error) {
 		return next(new ApiError("Somthing went wrong : " + error, 500));
 	}
 };
 
-exports.getUsers = async (req, res, next) => {
+exports.getStudents = async (req, res, next) => {
 	try {
 		const { limit, skip } = req.pagination;
 
-		const users = await User.find({}).limit(limit).skip(skip);
+		const students = await Student.find({})
+			.limit(limit)
+			.skip(skip)
+			.select("fullName email phone points crearedAt");
 
 		return res.status(200).json({
 			status: "success",
-			result: users,
+			result: students,
 			success: true,
 			message: "success",
 		});
@@ -54,19 +57,19 @@ exports.getUsers = async (req, res, next) => {
 	}
 };
 
-exports.getUser = async (req, res, next) => {
+exports.getStudent = async (req, res, next) => {
 	try {
 		const { userId } = req.params;
 
 		if (!userId) {
-			return next(new ApiError("user not found by this id " + userId, 404));
+			return next(new ApiError("student not found by this id " + userId, 404));
 		}
 
-		const user = await User.findById(userId).select("-password");
+		const student = await Student.findById(userId).select("-password");
 
 		return res.status(200).json({
 			status: "success",
-			result: user,
+			result: student,
 			success: true,
 			message: "success",
 		});
@@ -79,10 +82,10 @@ exports.getAuthenticatedUser = async (req, res, next) => {
 	try {
 		const userId = req.user._id;
 
-		const user = await User.findById(userId).select("-password -role");
+		const user = await Student.findById(userId).select("-password -role");
 
 		if (!userId) {
-			return next(new ApiError("user not found by this id " + userId, 404));
+			return next(new ApiError("student not found by this id " + userId, 404));
 		}
 
 		return res.status(200).json({
@@ -159,43 +162,43 @@ exports.getAuthenticatedUser = async (req, res, next) => {
 // 	}
 // };
 
-exports.deleteUser = async (req, res, next) => {
+exports.deleteStudent = async (req, res, next) => {
 	try {
 		const { userId } = req.params;
 
 		if (!userId) {
-			return next(new ApiError("user not found by this id " + userId, 404));
+			return next(new ApiError("student not found by this id " + userId, 404));
 		}
 
-		await User.findByIdAndDelete(userId);
+		await Student.findByIdAndDelete(userId);
 
 		return res.status(200).json({
 			status: "success",
 			result: null,
 			success: true,
-			message: "user deleted",
+			message: "student deleted",
 		});
 	} catch (error) {
 		next(new ApiError("somthing went wrong " + error, 500));
 	}
 };
 
-exports.deleteMenyUsers = async (req, res, next) => {
+exports.deleteMenyStudents = async (req, res, next) => {
 	try {
-		const { userIds } = req.body;
+		const { studentIds } = req.body;
 
-		if (!userIds || userIds.length === 0) {
+		if (!studentIds || studentIds.length === 0) {
 			return res.status(400).json({
 				status: "fail",
-				message: "User IDs array is required and must not be empty.",
+				message: "Student IDs array is required and must not be empty.",
 			});
 		}
 
-		const userIdObjects = userIds.map(
+		const userIdObjects = studentIds.map(
 			(userId) => new mongoose.Types.ObjectId(userId)
 		);
 
-		await User.deleteMany({
+		await Student.deleteMany({
 			_id: { $in: userIdObjects },
 		});
 
@@ -203,7 +206,7 @@ exports.deleteMenyUsers = async (req, res, next) => {
 			status: "success",
 			result: null,
 			success: true,
-			message: "users deleted",
+			message: "students deleted",
 		});
 	} catch (error) {
 		next(new ApiError("somthing went wrong " + error, 500));
@@ -215,9 +218,9 @@ exports.changePassword = async (req, res, next) => {
 		const { oldPassword, newPassword, confirmPassword } = req.body;
 		const userId = req.user._id;
 
-		const user = await User.findById(userId);
+		const user = await Student.findById(userId);
 		if (!user) {
-			return res.status(404).json({ message: "User not found" });
+			return res.status(404).json({ message: "Student not found" });
 		}
 
 		const isMatch = await bcryptjs.compare(oldPassword, user.password);
@@ -248,7 +251,7 @@ exports.changePassword = async (req, res, next) => {
 		return res.status(200).json({
 			status: "success",
 			result: {
-				userName: user.userName,
+				fullName: user.fullName,
 				phone: user.phone,
 			},
 			success: true,
@@ -264,7 +267,7 @@ exports.assignDiploma = async (req, res, next) => {
 	const { diplomaId } = req.body;
 
 	try {
-		const userFound = await User.findById(userId).select("-password -role");
+		const userFound = await Student.findById(userId).select("-password -role");
 		if (!userFound) {
 			return next(new ApiError("user not found", 404));
 		}
