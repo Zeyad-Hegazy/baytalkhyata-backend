@@ -217,7 +217,9 @@ exports.updateStudent = async (req, res, next) => {
 	const { userId } = req.params;
 	const { fullName, phone, email } = req.body;
 	try {
-		const student = await Student.findById(userId);
+		const student = await Student.findById(userId).select(
+			"fullName email phone points crearedAt"
+		);
 
 		if (!student) {
 			return next(new ApiError("student not found", 404));

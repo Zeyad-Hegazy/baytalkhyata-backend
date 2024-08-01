@@ -9,6 +9,7 @@ const {
 	deleteStudent,
 	deleteMenyStudents,
 	assignDiploma,
+	updateStudent,
 } = require("../controllers/studentController");
 
 const {
