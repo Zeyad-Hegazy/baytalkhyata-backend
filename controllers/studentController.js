@@ -213,6 +213,59 @@ exports.deleteMenyStudents = async (req, res, next) => {
 	}
 };
 
+exports.updateStudent = async (req, res, next) => {
+	const { userId } = req.params;
+	const { fullName, phone, email } = req.body;
+	try {
+		const student = await Student.findById(userId);
+
+		if (!student) {
+			return next(new ApiError("student not found", 404));
+		}
+
+		if (email) {
+			const existingEmail = await Student.findOne({ email });
+			if (existingEmail) {
+				return res.status(200).json({
+					status: "fail",
+					result: student,
+					success: false,
+					message: "this email already used",
+				});
+			} else {
+				student.email = email || student.email;
+			}
+		}
+
+		if (phone) {
+			const existingPhone = await Student.findOne({ phone });
+			if (existingPhone) {
+				return res.status(200).json({
+					status: "fail",
+					result: student,
+					success: false,
+					message: "this phone already used",
+				});
+			} else {
+				student.phone = phone || student.phone;
+			}
+		}
+
+		student.fullName = fullName || student.fullName;
+
+		await student.save();
+
+		return res.status(200).json({
+			status: "success",
+			result: student,
+			success: true,
+			message: "student updated",
+		});
+	} catch (error) {
+		return next(new ApiError("Somthing went wrong : " + error, 500));
+	}
+};
+
 exports.changePassword = async (req, res, next) => {
 	try {
 		const { oldPassword, newPassword, confirmPassword } = req.body;

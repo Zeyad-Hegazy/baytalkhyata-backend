@@ -26,7 +26,11 @@ const { pagination } = require("../middlewares/pagination");
 router.delete("/student/meny", deleteMenyStudents);
 router.patch("/student/assign/:userId", assignDiploma);
 router.route("/student").post(createStudent).get(pagination, getStudents);
-router.route("/student/:userId").get(getStudent).delete(deleteStudent);
+router
+	.route("/student/:userId")
+	.get(getStudent)
+	.patch(updateStudent)
+	.delete(deleteStudent);
 
 router.patch("/product/gift/:productId", giftProduct);
 router.delete("/product/meny", deleteMenyProducts);
