@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Product = require("../models/ProductModel");
 const Student = require("../models/StudentModel");
 const ApiError = require("../util/ApiError");
@@ -144,6 +145,20 @@ exports.deleteMenyProducts = async (req, res, next) => {
 		const productIdObjects = productIds.map(
 			(productId) => new mongoose.Types.ObjectId(productId)
 		);
+
+		const products = await Product.find({ _id: { $in: productIdObjects } });
+
+		if (!products || products.length === 0) {
+			return res.status(404).json({
+				status: "fail",
+				message: "No products found for the given IDs.",
+			});
+		}
+
+		const imageDeletionPromises = products.map((product) =>
+			deleteImage(product.image)
+		);
+		await Promise.all(imageDeletionPromises);
 
 		await Product.deleteMany({
 			_id: { $in: productIdObjects },
