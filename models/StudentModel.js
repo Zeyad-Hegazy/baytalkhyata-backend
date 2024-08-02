@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 
 const StudentSchema = new mongoose.Schema(
 	{
-		// userName: { type: String, required: true, unique: true },
 		fullName: { type: String, required: true },
 		email: { type: String, required: true, unique: true },
 		phone: { type: String, required: true, unique: true },
@@ -15,7 +14,7 @@ const StudentSchema = new mongoose.Schema(
 			{ type: mongoose.Schema.ObjectId, ref: "Product", default: [] },
 		],
 		role: { type: String, default: "user" },
-		// completedItems: [{ type: mongoose.Schema.ObjectId, ref: "Item" }],
+		lastSeen: { type: Date, default: Date.now },
 	},
 	{ timestamps: true }
 );

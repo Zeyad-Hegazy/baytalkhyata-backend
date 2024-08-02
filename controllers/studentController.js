@@ -44,7 +44,7 @@ exports.getStudents = async (req, res, next) => {
 		const students = await Student.find({})
 			.limit(limit)
 			.skip(skip)
-			.select("fullName email phone points crearedAt");
+			.select("fullName email phone points lastSeen");
 
 		return res.status(200).json({
 			status: "success",
