@@ -28,6 +28,8 @@ exports.createStudent = async (req, res, next) => {
 				fullName: newUser.fullName,
 				phone: newUser.phone,
 				email: newUser.email,
+				points: newUser.points,
+				lastSeen: newUser.lastSeen,
 			},
 			success: true,
 			message: "new student created successfully",
@@ -225,41 +227,50 @@ exports.updateStudent = async (req, res, next) => {
 			return next(new ApiError("student not found", 404));
 		}
 
-		if (email) {
-			const existingEmail = await Student.findOne({ email });
-			if (existingEmail) {
-				return res.status(200).json({
-					status: "fail",
-					result: student,
-					success: false,
-					message: "this email already used",
-				});
-			} else {
-				student.email = email || student.email;
-			}
-		}
+		// if (email) {
+		// 	const existingEmail = await Student.findOne({ email });
+		// 	if (existingEmail) {
+		// 		return res.status(200).json({
+		// 			status: "fail",
+		// 			result: student,
+		// 			success: false,
+		// 			message: "this email already used",
+		// 		});
+		// 	} else {
+		// 		student.email = email || student.email;
+		// 	}
+		// }
 
-		if (phone) {
-			const existingPhone = await Student.findOne({ phone });
-			if (existingPhone) {
-				return res.status(200).json({
-					status: "fail",
-					result: student,
-					success: false,
-					message: "this phone already used",
-				});
-			} else {
-				student.phone = phone || student.phone;
-			}
-		}
+		// if (phone) {
+		// 	const existingPhone = await Student.findOne({ phone });
+		// 	if (existingPhone) {
+		// 		return res.status(200).json({
+		// 			status: "fail",
+		// 			result: student,
+		// 			success: false,
+		// 			message: "this phone already used",
+		// 		});
+		// 	} else {
+		// 		student.phone = phone || student.phone;
+		// 	}
+		// }
 
 		student.fullName = fullName || student.fullName;
+		student.email = email || student.email;
+		student.phone = phone || student.phone;
 
 		await student.save();
 
 		return res.status(200).json({
 			status: "success",
-			result: student,
+			result: {
+				_id: student._id,
+				fullName: student.fullName,
+				phone: student.phone,
+				email: student.email,
+				points: student.points,
+				lastSeen: student.lastSeen,
+			},
 			success: true,
 			message: "student updated",
 		});
