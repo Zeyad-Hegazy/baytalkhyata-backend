@@ -22,6 +22,15 @@ const {
 	getProducts,
 } = require("../controllers/productController");
 
+const {
+	createItem,
+	getItems,
+	getPdfFromCloudinary,
+	downloadPdfFromCloudinary,
+	updateItem,
+	deleteItem,
+} = require("../controllers/libraryController");
+
 const { pagination } = require("../middlewares/pagination");
 
 router.delete("/student/meny", deleteMenyStudents);
@@ -41,5 +50,12 @@ router
 	.get(getProduct)
 	.patch(updateProduct)
 	.delete(deleteProduct);
+
+router.route("/library").get(getItems).post(createItem);
+router
+	.route("/library/:itemId")
+	.get(getPdfFromCloudinary)
+	.patch(updateItem)
+	.delete(deleteItem);
 
 module.exports = router;
