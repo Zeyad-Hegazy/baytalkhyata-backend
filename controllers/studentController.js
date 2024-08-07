@@ -3,6 +3,7 @@ const Student = require("../models/StudentModel");
 const Diploma = require("../models/DiplomaModel");
 const ApiError = require("../util/ApiError");
 const bcryptjs = require("bcryptjs");
+const formatDate = require("../util/formatDate");
 
 exports.createStudent = async (req, res, next) => {
 	const { fullName, password, phone, email } = req.body;
@@ -48,9 +49,16 @@ exports.getStudents = async (req, res, next) => {
 			.skip(skip)
 			.select("fullName email phone points lastSeen");
 
+		const formattedStudents = students.map((student) => {
+			return {
+				...student.toObject(),
+				lastSeen: formatDate(student.lastSeen),
+			};
+		});
+
 		return res.status(200).json({
 			status: "success",
-			result: students,
+			result: formattedStudents,
 			success: true,
 			message: "success",
 		});

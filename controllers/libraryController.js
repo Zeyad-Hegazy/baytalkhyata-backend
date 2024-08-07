@@ -19,7 +19,12 @@ exports.createItem = async (req, res, next) => {
 
 		return res.status(201).json({
 			status: "success",
-			result: newItem,
+			result: {
+				title: newItem.title,
+				image: newItem.image,
+				size: newItem.size,
+				createdAt: newItem.createdAt,
+			},
 			success: true,
 			message: "new library item created successfully",
 		});
@@ -30,7 +35,7 @@ exports.createItem = async (req, res, next) => {
 
 exports.getItems = async (req, res, next) => {
 	try {
-		const items = await Library.find({}).select("title image createdAt");
+		const items = await Library.find({}).select("title image size createdAt");
 		return res.status(200).json({
 			status: "success",
 			result: items,
@@ -47,35 +52,10 @@ exports.getPdfFromCloudinary = async (req, res, next) => {
 
 	try {
 		const item = await Library.findById(itemId);
-		const result = await cloudinary.api.resource(item.pdfFile.publicId, {
-			resource_type: "raw",
-		});
-
-		res.redirect(result.secure_url);
+		res.status(200).json({ pdfUrl: item.pdfFile.secureUrl });
 	} catch (error) {
 		res.status(500).json({ error: error.message });
 	}
-
-	// try {
-	// 	// Generate URL for the PDF
-	// 	const item = await Library.findById(itemId);
-
-	// 	const pdfUrl = cloudinary.url(item.pdfFile.publicId, {
-	// 		resource_type: "raw",
-	// 	});
-
-	// 	// Fetch the PDF
-	// 	const response = await fetch(pdfUrl);
-
-	// 	if (!response.ok) {
-	// 		throw new Error(`Error fetching PDF: ${response.statusText}`);
-	// 	}
-
-	// 	const pdfBlob = await response.blob();
-	// 	console.log("PDF retrieved successfully:", pdfBlob);
-	// } catch (error) {
-	// 	console.error("Error retrieving PDF:", error.message);
-	// }
 };
 
 exports.downloadPdfFromCloudinary = async (req, res, next) => {
@@ -120,13 +100,14 @@ exports.updateItem = async (req, res, next) => {
 	try {
 		const item = await Library.findById(itemId);
 
-		const updatedPdf = await saveAndDeletePdf(item.pdfFile.publicId, pdf);
-
-		console.log(updatedPdf);
 		item.title = title || item.title;
-		item.pdfFile.publicId = updatedPdf.resultPublicId || item.pdfFile.publicId;
-		item.pdfFile.secureUrl =
-			updatedPdf.resultSecureUrl || item.pdfFile.secureUrl;
+		if (pdf) {
+			const updatedPdf = await saveAndDeletePdf(item.pdfFile.publicId, pdf);
+			item.pdfFile.publicId =
+				updatedPdf.resultPublicId || item.pdfFile.publicId;
+			item.pdfFile.secureUrl =
+				updatedPdf.resultSecureUrl || item.pdfFile.secureUrl;
+		}
 		await item.save();
 
 		return res.status(200).json({
