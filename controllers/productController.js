@@ -14,7 +14,12 @@ exports.createProduct = async (req, res, next) => {
 
 		return res.status(201).json({
 			status: "success",
-			result: newProduct,
+			result: {
+				_id: newProduct._id,
+				title: newProduct.title,
+				points: newProduct.points,
+				image: `${res.locals.baseUrl}/uploads/${newProduct.image}`,
+			},
 			success: true,
 			message: "new product created successfully",
 		});
@@ -39,7 +44,6 @@ exports.getProducts = async (req, res, next) => {
 		const formattedProducts = products.map((product) => ({
 			_id: product._id,
 			title: product.title,
-			description: product.description,
 			points: product.points,
 			image: `${res.locals.baseUrl}/uploads/${product.image}`,
 		}));
@@ -79,7 +83,7 @@ exports.getProduct = async (req, res, next) => {
 
 exports.updateProduct = async (req, res, next) => {
 	const { productId } = req.params;
-	const { title, description, image, points } = req.body;
+	const { title, image, points } = req.body;
 	try {
 		const product = await Product.findById(productId);
 
@@ -90,7 +94,6 @@ exports.updateProduct = async (req, res, next) => {
 		const updatedImage = await saveAndDeleteImage(product.image, image);
 
 		product.title = title || product.title;
-		product.description = description || product.description;
 		product.points = points || product.points;
 		product.image = updatedImage;
 
@@ -98,7 +101,12 @@ exports.updateProduct = async (req, res, next) => {
 
 		return res.status(200).json({
 			status: "success",
-			result: product,
+			result: {
+				_id: product._id,
+				title: product.title,
+				points: product.points,
+				image: `${res.locals.baseUrl}/uploads/${product.image}`,
+			},
 			success: true,
 			message: "product updated",
 		});
