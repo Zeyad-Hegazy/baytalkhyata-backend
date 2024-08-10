@@ -20,6 +20,7 @@ exports.createItem = async (req, res, next) => {
 		return res.status(201).json({
 			status: "success",
 			result: {
+				_id: newItem._id,
 				title: newItem.title,
 				image: newItem.image,
 				size: newItem.size,
@@ -112,7 +113,13 @@ exports.updateItem = async (req, res, next) => {
 
 		return res.status(200).json({
 			status: "success",
-			result: item,
+			result: {
+				_id: item._id,
+				title: item.title,
+				image: item.image,
+				size: item.size,
+				createdAt: item.createdAt,
+			},
 			success: true,
 			message: "library item updated successfully",
 		});

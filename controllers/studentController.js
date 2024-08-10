@@ -26,6 +26,7 @@ exports.createStudent = async (req, res, next) => {
 		return res.status(201).json({
 			status: "success",
 			result: {
+				_id: newUser._id,
 				fullName: newUser.fullName,
 				phone: newUser.phone,
 				email: newUser.email,

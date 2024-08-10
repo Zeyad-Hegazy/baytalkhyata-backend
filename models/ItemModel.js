@@ -7,7 +7,11 @@ const ItemSchema = new mongoose.Schema(
 			required: true,
 			enum: ["video", "pdf", "image", "text", "audio", "quiz"],
 		},
-		content: { type: String, required: true },
+		content: {
+			publicId: String,
+			secureUrl: String,
+		},
+		size: String,
 		points: { type: Number, default: 0 },
 		level: { type: mongoose.Schema.ObjectId, ref: "Level" },
 	},
