@@ -31,6 +31,11 @@ const {
 	deleteItem,
 } = require("../controllers/libraryController");
 
+const {
+	createDiploma,
+	getDiplomas,
+} = require("../controllers/diplomaController");
+
 const { pagination } = require("../middlewares/pagination");
 
 router.delete("/student/meny", deleteMenyStudents);
@@ -57,5 +62,7 @@ router
 	.get(getPdfFromCloudinary)
 	.patch(updateItem)
 	.delete(deleteItem);
+
+router.route("/diploma").post(createDiploma).get(getDiplomas);
 
 module.exports = router;
