@@ -34,6 +34,8 @@ const {
 const {
 	createDiploma,
 	getDiplomas,
+	deleteDiploma,
+	updateDiploma,
 } = require("../controllers/diplomaController");
 
 const { pagination } = require("../middlewares/pagination");
@@ -64,5 +66,6 @@ router
 	.delete(deleteItem);
 
 router.route("/diploma").post(createDiploma).get(getDiplomas);
+router.route("/diploma/:diplomaId").delete(deleteDiploma).patch(updateDiploma);
 
 module.exports = router;

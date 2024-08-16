@@ -22,8 +22,10 @@ exports.createDiploma = async (req, res, next) => {
 				title: newDiploma.title,
 				description: newDiploma.description,
 				totalHours: newDiploma.totalHours,
+				price: newDiploma.price,
+				totalPoints: newDiploma.totalPoints,
 				chapters: newDiploma.chapters.length,
-				createdAt: newDiploma.createdAt,
+				expiresIn: newDiploma.expiresIn,
 			},
 			success: true,
 			message: "new diploma created successfully",
@@ -36,7 +38,7 @@ exports.createDiploma = async (req, res, next) => {
 exports.getDiplomas = async (req, res, next) => {
 	try {
 		const diplomas = await Diploma.find({}).select(
-			"title description totalHours chapters price totalPoints createdAt"
+			"title description totalHours chapters price totalPoints expiresIn"
 		);
 
 		const diplomasWithChapterLength = diplomas.map((diploma) => ({
@@ -52,5 +54,54 @@ exports.getDiplomas = async (req, res, next) => {
 		});
 	} catch (error) {
 		return next(new ApiError("Something went wrong : " + error, 500));
+	}
+};
+
+exports.deleteDiploma = async (req, res, next) => {
+	try {
+		const { diplomaId } = req.params;
+
+		await Diploma.findByIdAndDelete(diplomaId);
+
+		return res.status(200).json({
+			status: "success",
+			result: null,
+			success: true,
+			message: "Diploma deleted successfully",
+		});
+	} catch (error) {
+		return next(new ApiError("Somthing went wrong : " + error, 500));
+	}
+};
+
+exports.updateDiploma = async (req, res, next) => {
+	const { diplomaId } = req.params;
+
+	try {
+		const updatedDiploma = await Diploma.findByIdAndUpdate(
+			diplomaId,
+			req.body,
+			{
+				new: true,
+			}
+		);
+
+		return res.status(200).json({
+			status: "success",
+			result: {
+				_id: updatedDiploma._id,
+				title: updatedDiploma.title,
+				description: updatedDiploma.description,
+				totalHours: updatedDiploma.totalHours,
+				price: updatedDiploma.price,
+				totalPoints: updatedDiploma.totalPoints,
+				chapters: updatedDiploma.chapters.length,
+				expiresIn: updatedDiploma.expiresIn,
+			},
+			success: true,
+			message: "diploma updated successfully",
+		});
+	} catch (error) {
+		return next(new ApiError("Somthing went wrong : " + error, 500));
 	}
 };
