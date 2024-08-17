@@ -39,6 +39,10 @@ const {
 } = require("../controllers/diplomaController");
 
 const { pagination } = require("../middlewares/pagination");
+const {
+	createChapter,
+	addLevelToChapter,
+} = require("../controllers/chapterController");
 
 router.delete("/student/meny", deleteMenyStudents);
 router.patch("/student/assign/:userId", assignDiploma);
@@ -67,5 +71,8 @@ router
 
 router.route("/diploma").post(createDiploma).get(getDiplomas);
 router.route("/diploma/:diplomaId").delete(deleteDiploma).patch(updateDiploma);
+
+router.route("/chapter").post(createChapter);
+router.route("/chapter/:chapterId").patch(addLevelToChapter);
 
 module.exports = router;
