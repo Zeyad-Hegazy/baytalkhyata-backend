@@ -1,8 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 
-const deleteFile = async (filePath) => {
+const deleteFile = async (videoPath) => {
 	try {
+		const filePath = path.join("uploads", "videos", videoPath);
 		await fs.promises.unlink(filePath);
 	} catch (error) {
 		console.error("Error deleting file:", error);

@@ -18,7 +18,7 @@ exports.createProduct = async (req, res, next) => {
 				_id: newProduct._id,
 				title: newProduct.title,
 				points: newProduct.points,
-				image: `${res.locals.baseUrl}/uploads/${newProduct.image}`,
+				image: `${res.locals.baseUrl}/uploads/images/${newProduct.image}`,
 			},
 			success: true,
 			message: "new product created successfully",
@@ -45,7 +45,7 @@ exports.getProducts = async (req, res, next) => {
 			_id: product._id,
 			title: product.title,
 			points: product.points,
-			image: `${res.locals.baseUrl}/uploads/${product.image}`,
+			image: `${res.locals.baseUrl}/uploads/images/${product.image}`,
 		}));
 
 		return res.status(200).json({
@@ -68,7 +68,7 @@ exports.getProduct = async (req, res, next) => {
 			return next(new ApiError("product not found", 404));
 		}
 
-		product.image = `${res.locals.baseUrl}/uploads/${product.image}`;
+		product.image = `${res.locals.baseUrl}/uploads/images/${product.image}`;
 
 		return res.status(200).json({
 			status: "success",
@@ -105,7 +105,7 @@ exports.updateProduct = async (req, res, next) => {
 				_id: product._id,
 				title: product.title,
 				points: product.points,
-				image: `${res.locals.baseUrl}/uploads/${product.image}`,
+				image: `${res.locals.baseUrl}/uploads/images/${product.image}`,
 			},
 			success: true,
 			message: "product updated",

@@ -5,7 +5,7 @@ const sharp = require("sharp");
 exports.deleteImage = async (imagePath) => {
 	if (imagePath) {
 		try {
-			const filePath = path.join("uploads", imagePath);
+			const filePath = path.join("uploads", "images", imagePath);
 			await fs.promises.unlink(filePath);
 		} catch (error) {
 			console.error("Error deleting image:", error);
@@ -39,7 +39,7 @@ const saveBase64Image = async (base64String, isImage) => {
 
 		const uniqueFilename = `image-${Date.now()}-cover.${fileExtension}`;
 
-		const filePath = path.join("uploads", uniqueFilename);
+		const filePath = path.join("uploads", "images", uniqueFilename);
 
 		if (isImage) {
 			let image = sharp(imageBuffer);
