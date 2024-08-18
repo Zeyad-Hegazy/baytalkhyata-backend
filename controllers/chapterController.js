@@ -1,8 +1,10 @@
 const Chapter = require("../models/ChapterModel");
 const Diploma = require("../models/DiplomaModel");
 const ApiError = require("../util/ApiError");
-const cloudinary = require("../config/cloudinary");
-const { Readable } = require("stream");
+const { saveAndDeleteVideo } = require("../util/videoUtility");
+const { saveAndDeleteAudio } = require("../util/audioUtility");
+const { saveAndDeleteImage } = require("../util/imageUtil");
+const { saveAndDeletePdfFS } = require("../util/pdfUtility");
 
 exports.createChapter = async (req, res, next) => {
 	const { title, diploma } = req.body;
@@ -33,82 +35,60 @@ exports.createChapter = async (req, res, next) => {
 
 exports.addLevelToChapter = async (req, res, next) => {
 	const { chapterId } = req.params;
-	const { level, video, audio, image, pdf, text, points = 0, size } = req.body;
-
-	const uploadToCloudinary = (fileBuffer, folder) => {
-		return new Promise((resolve, reject) => {
-			const uploadStream = cloudinary.uploader.upload_stream(
-				{ folder, resource_type: "auto" },
-				(error, result) => {
-					if (error) {
-						return reject(error);
-					}
-					resolve(result);
-				}
-			);
-			Readable.from(fileBuffer).pipe(uploadStream);
-		});
-	};
+	const { level, video, audio, image, pdf, text } = req.body;
 
 	try {
 		const newLevel = [];
 
-		if (video) {
-			const uploadedVideo = await uploadToCloudinary(video, "video");
+		if (video.base64) {
+			const uploadedVideo = await saveAndDeleteVideo(
+				null,
+				video.base64,
+				"videos"
+			);
 			newLevel.push({
 				type: "video",
-				content: {
-					publicId: uploadedVideo.public_id,
-					secureUrl: uploadedVideo.secure_url,
-				},
-				points,
+				file: uploadedVideo,
+				points: video.points,
 			});
 		}
 
-		if (audio) {
-			const uploadedAudio = await uploadToCloudinary(audio, "audio");
+		if (audio.base64) {
+			const uploadedAudio = await saveAndDeleteAudio(
+				null,
+				audio.base64,
+				"audios"
+			);
 			newLevel.push({
 				type: "audio",
-				content: {
-					publicId: uploadedAudio.public_id,
-					secureUrl: uploadedAudio.secure_url,
-				},
-				points,
+				file: uploadedAudio,
+				points: audio.points,
 			});
 		}
 
-		if (image) {
-			const uploadedImage = await uploadToCloudinary(image, "image");
+		if (image.base64) {
+			const uploadedImage = await saveAndDeleteImage(null, image.base64);
 			newLevel.push({
 				type: "image",
-				content: {
-					publicId: uploadedImage.public_id,
-					secureUrl: uploadedImage.secure_url,
-				},
-				points,
+				file: uploadedImage,
+				points: image.points,
 			});
 		}
 
-		if (pdf) {
-			const uploadedPdf = await uploadToCloudinary(pdf, "pdf");
+		if (pdf.base64) {
+			const uploadedPdf = await saveAndDeletePdfFS(null, pdf.base64, "pdfs");
 			newLevel.push({
 				type: "pdf",
-				content: {
-					publicId: uploadedPdf.public_id,
-					secureUrl: uploadedPdf.secure_url,
-				},
-				points,
+				file: uploadedPdf,
+				points: pdf.points,
 			});
 		}
 
-		if (text) {
+		if (text.text) {
 			newLevel.push({
 				type: "text",
-				content: {
-					publicId: null, // No publicId for text
-					secureUrl: text, // Store text as "secureUrl" here for simplicity
-				},
-				points,
+				file: text.text,
+				points: text.points,
 			});
 		}
 
@@ -129,7 +109,7 @@ exports.addLevelToChapter = async (req, res, next) => {
 			status: "success",
 			result: updatedChapter,
 			success: true,
-			message: "level " + level + " created successfully",
+			message: `Level ${level} created successfully`,
 		});
 	} catch (error) {
 		return next(new ApiError(`Something went wrong: ${error.message}`, 500));

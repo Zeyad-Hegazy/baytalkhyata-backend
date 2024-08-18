@@ -6,11 +6,7 @@ const levelSchema = new mongoose.Schema({
 		required: true,
 		enum: ["video", "pdf", "image", "text", "audio", "quiz"],
 	},
-	content: {
-		publicId: String,
-		secureUrl: String,
-	},
-	// size: String,
+	file: String,
 	points: { type: Number, default: 0 },
 });
 
