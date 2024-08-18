@@ -44,6 +44,11 @@ const {
 	addLevelToChapter,
 } = require("../controllers/chapterController");
 
+const {
+	createCategory,
+	getCategories,
+} = require("../controllers/categoryController");
+
 router.delete("/student/meny", deleteMenyStudents);
 router.patch("/student/assign/:userId", assignDiploma);
 router.route("/student").post(createStudent).get(pagination, getStudents);
@@ -74,5 +79,7 @@ router.route("/diploma/:diplomaId").delete(deleteDiploma).patch(updateDiploma);
 
 router.route("/chapter").post(createChapter);
 router.route("/chapter/:chapterId").patch(addLevelToChapter);
+
+router.route("/category").post(createCategory).get(getCategories);
 
 module.exports = router;
