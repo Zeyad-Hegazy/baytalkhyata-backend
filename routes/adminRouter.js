@@ -47,6 +47,8 @@ const {
 const {
 	createCategory,
 	getCategories,
+	createCategoryItem,
+	getCategoryItems,
 } = require("../controllers/categoryController");
 
 router.delete("/student/meny", deleteMenyStudents);
@@ -81,5 +83,8 @@ router.route("/chapter").post(createChapter);
 router.route("/chapter/:chapterId").patch(addLevelToChapter);
 
 router.route("/category").post(createCategory).get(getCategories);
+
+router.post("/category/item", createCategoryItem);
+router.route("/category/item/:categoryId").get(getCategoryItems);
 
 module.exports = router;
