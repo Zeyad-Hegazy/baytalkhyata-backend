@@ -1,10 +1,15 @@
 const Chapter = require("../models/ChapterModel");
 const Diploma = require("../models/DiplomaModel");
 const ApiError = require("../util/ApiError");
+
 const { saveAndDeleteVideo } = require("../util/videoUtility");
 const { saveAndDeleteAudio } = require("../util/audioUtility");
 const { saveAndDeleteImage } = require("../util/imageUtil");
 const { saveAndDeletePdfFS } = require("../util/pdfUtility");
+
+const Answer = require("../models/AnswerModel");
+const Question = require("../models/QuestionModel");
+const Quiz = require("../models/QuizModel");
 
 exports.createChapter = async (req, res, next) => {
 	const { title, diploma } = req.body;
@@ -113,5 +118,56 @@ exports.addLevelToChapter = async (req, res, next) => {
 		});
 	} catch (error) {
 		return next(new ApiError(`Something went wrong: ${error.message}`, 500));
+	}
+};
+
+exports.createQuizLevel = async (req, res, next) => {
+	const { title, chapter, questions, totalScore, passedScore } = req.body;
+
+	try {
+		const questionPromises = questions.map(async (question) => {
+			const answerPromises = question.answers.map(async (answer) => {
+				const newAnswer = await Answer.create({
+					text: answer.text,
+					isCorrect: answer.isCorrect,
+				});
+				return newAnswer._id;
+			});
+
+			const answerIds = await Promise.all(answerPromises);
+
+			const newQuestion = await Question.create({
+				text: question.text,
+				answers: answerIds,
+				score: question.score,
+			});
+
+			return newQuestion._id;
+		});
+
+		const questionIds = await Promise.all(questionPromises);
+
+		const newQuiz = await Quiz.create({
+			title,
+			chapter,
+			questions: questionIds,
+			totalScore,
+			passedScore,
+		});
+
+		await Chapter.findByIdAndUpdate(
+			chapter,
+			{ levelFive: newQuiz._id },
+			{ new: true }
+		);
+
+		return res.status(201).json({
+			status: "success",
+			result: newQuiz,
+			success: true,
+			message: "Quiz created successfully",
+		});
+	} catch (error) {
+		return next(new ApiError("Something went wrong: " + error, 500));
 	}
 };

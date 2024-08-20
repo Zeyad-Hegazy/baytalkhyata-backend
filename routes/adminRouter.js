@@ -39,9 +39,11 @@ const {
 } = require("../controllers/diplomaController");
 
 const { pagination } = require("../middlewares/pagination");
+
 const {
 	createChapter,
 	addLevelToChapter,
+	createQuizLevel,
 } = require("../controllers/chapterController");
 
 const {
@@ -81,6 +83,7 @@ router.route("/diploma/:diplomaId").delete(deleteDiploma).patch(updateDiploma);
 
 router.route("/chapter").post(createChapter);
 router.route("/chapter/:chapterId").patch(addLevelToChapter);
+router.post("/chapter/quiz", createQuizLevel);
 
 router.route("/category").post(createCategory).get(getCategories);
 

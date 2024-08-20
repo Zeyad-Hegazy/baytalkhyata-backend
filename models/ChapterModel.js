@@ -18,7 +18,7 @@ const ChapterSchema = new mongoose.Schema(
 		levelTwo: [levelSchema],
 		levelThree: [levelSchema],
 		levelFour: [levelSchema],
-		levelFive: [levelSchema],
+		levelFive: { type: mongoose.Schema.ObjectId, ref: "Quiz" },
 	},
 	{ timestamps: true }
 );
