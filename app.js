@@ -18,6 +18,7 @@ const { ADMIN } = require("./constants/userRoles.js");
 const authRoutes = require("./routes/authRouter.js");
 const adminRoutes = require("./routes/adminRouter.js");
 const studentRoutes = require("./routes/studentRouter.js");
+const conversationRoutes = require("./routes/conversationRouter.js");
 
 dbConnection();
 
@@ -101,6 +102,13 @@ app.use(
 	isRole([{ value: "user" }]),
 	updateLastSeen,
 	studentRoutes
+);
+
+app.use(
+	"/api/v1/conversation",
+	isAuth,
+	isRole([{ value: ADMIN }, { value: "user" }]),
+	conversationRoutes
 );
 
 app.use("*", (req, res, next) => {
