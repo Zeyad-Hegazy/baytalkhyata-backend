@@ -17,10 +17,10 @@ exports.createMessage = async (req, res, next) => {
 };
 
 exports.getMessages = async (req, res, next) => {
-	const { conversationId } = req.params;
+	const { userId } = req.params;
 	try {
 		const messages = await Message.find({
-			conversation: conversationId,
+			$or: [{ reciver: userId }, { sender: userId }],
 		});
 
 		return res.status(200).json({
@@ -30,6 +30,6 @@ exports.getMessages = async (req, res, next) => {
 			message: "success",
 		});
 	} catch (error) {
-		return next(new ApiError("Somthing went wrong : " + error, 500));
+		return next(new ApiError("Something went wrong: " + error, 500));
 	}
 };

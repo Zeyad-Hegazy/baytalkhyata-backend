@@ -4,6 +4,19 @@ const ApiError = require("../util/ApiError");
 exports.createConversation = async (req, res, next) => {
 	const { admin, student } = req.body;
 	try {
+		const exisitingConversation = await Conversation.findOne({
+			memberIds: { $all: [admin, student] },
+		});
+
+		if (exisitingConversation) {
+			return res.status(200).json({
+				status: "success",
+				result: exisitingConversation,
+				success: true,
+				message: "success",
+			});
+		}
+
 		const newConversation = await Conversation.create({
 			members: { admin, student },
 			memberIds: [admin, student],
