@@ -19,10 +19,26 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
 	console.log("New client connected");
 
-	socket.on("message", (data) => {
-		console.log("Message received: ", data);
-		socket.broadcast.emit("message", data);
+	socket.on("join", (userId) => {
+		socket.join(userId);
+		console.log(`User with ID ${userId} joined room ${userId}`);
 	});
+
+	socket.on(
+		"message",
+		({ _id, sender, reciver, text, createdAt, updatedAt }) => {
+			console.log(`Message from ${sender} to ${reciver}: `, text);
+
+			io.to(reciver).emit("message", {
+				_id,
+				sender,
+				reciver,
+				text,
+				createdAt,
+				updatedAt,
+			});
+		}
+	);
 
 	socket.on("disconnect", () => {
 		console.log("Client disconnected");
