@@ -9,6 +9,8 @@ const {
 	getProduct,
 } = require("../controllers/productController");
 
+const { streamChapterLevelFiles } = require("../controllers/chapterController");
+
 const { pagination } = require("../middlewares/pagination");
 
 router.get("/profile", getAuthenticatedUser);
@@ -16,5 +18,10 @@ router.get("/profile", getAuthenticatedUser);
 router.patch("/product/redeem/:productId", redeemProduct);
 router.get("/product", pagination, getProducts);
 router.get("/product/:productId", getProduct);
+
+router.get(
+	"/chapters/:chapterId/levels/:levelType/:fileType",
+	streamChapterLevelFiles
+);
 
 module.exports = router;
