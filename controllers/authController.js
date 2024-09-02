@@ -21,8 +21,10 @@ const buildToken = (user) => {
 	return { token, expiresIn, expirationDate };
 };
 
-const loginUser = async (model, email, password) => {
-	const user = await model.findOne({ email });
+const loginUser = async (model, field, value, password) => {
+	const query = {};
+	query[field] = value;
+	const user = await model.findOne(query);
 	if (user) {
 		const isPasswordCorrect = await bcryptjs.compare(password, user.password);
 		if (isPasswordCorrect) {
@@ -32,10 +34,11 @@ const loginUser = async (model, email, password) => {
 	return null;
 };
 
-const extractUserInfo = (res, user) => {
+const extractUserInfo = (user) => {
 	return {
 		_id: user?._id,
 		email: user?.email,
+		phone: user?.phone,
 		role: user?.role,
 		createdAt: user?.createdAt,
 	};
@@ -43,33 +46,38 @@ const extractUserInfo = (res, user) => {
 
 exports.login = async (req, res, next) => {
 	try {
-		const { email, password } = req.body;
+		const { email, phone, password } = req.body;
 
-		const admin = await loginUser(Admin, email, password);
-		if (admin) {
-			const token = buildToken(admin).token;
-			return res.status(200).json({
-				status: "success",
-				result: {
-					user: extractUserInfo(res, admin),
-					token,
-				},
-				message: "Logged in successfully",
-			});
+		if (email) {
+			const admin = await loginUser(Admin, "email", email, password);
+			if (admin) {
+				const token = buildToken(admin).token;
+				return res.status(200).json({
+					status: "success",
+					result: {
+						user: extractUserInfo(admin),
+						token,
+					},
+					message: "Logged in successfully",
+				});
+			}
 		}
 
-		const user = await loginUser(Student, email, password);
-		if (user) {
-			const token = buildToken(user).token;
-			return res.status(200).json({
-				status: "success",
-				result: {
-					user: extractUserInfo(res, user),
-					token,
-				},
-				message: "Logged in successfully",
-			});
+		if (phone) {
+			const student = await loginUser(Student, "phone", phone, password);
+			if (student) {
+				const token = buildToken(student).token;
+				return res.status(200).json({
+					status: "success",
+					result: {
+						user: extractUserInfo(student),
+						token,
+					},
+					message: "Logged in successfully",
+				});
+			}
 		}
+
 		return next(new ApiError("User Not Found or password is incorrect", 404));
 	} catch (error) {
 		next(new ApiError("Something went wrong " + error, 500));
