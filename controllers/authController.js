@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const Admin = require("../models/AdminModel");
 const ApiError = require("../util/ApiError");
 const Student = require("../models/StudentModel");
+const OTP = require("../models/OTP");
 
 const buildToken = (user) => {
 	const expiresIn = 86400;
@@ -115,4 +116,94 @@ exports.logout = async (req, res, next) => {
 	const token = req.headers.authorization.split(" ")[1];
 	this.tokenBlackList.add(token);
 	res.status(200).json({ status: "success", message: "success" });
+};
+
+const sendOTP = (phone, otp) => {
+	console.log(`OTP sent to ${phone}: ${otp}`);
+	// TODO Use Twilio or another SMS service to send OTP here
+};
+
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000);
+
+exports.requestOTP = async (req, res, next) => {
+	try {
+		const { phone } = req.body;
+
+		const student = await Student.findOne({ phone });
+		if (!student) {
+			return next(new ApiError("User not found", 404));
+		}
+
+		const otp = generateOTP();
+
+		await OTP.create({
+			phone,
+			code: otp,
+		});
+
+		sendOTP(phone, otp);
+
+		res.status(200).json({
+			status: "success",
+			message: "OTP sent successfully",
+		});
+	} catch (error) {
+		next(new ApiError("Something went wrong " + error, 500));
+	}
+};
+
+exports.verifyOTP = async (req, res, next) => {
+	try {
+		const { phone, otp } = req.body;
+
+		const otpRecord = await OTP.findOne({ phone, code: otp });
+
+		if (!otpRecord) {
+			return next(new ApiError("Invalid OTP", 400));
+		}
+
+		if (otpRecord.expiresAt < new Date()) {
+			return next(new ApiError("OTP has expired", 400));
+		}
+
+		otpRecord.verified = true;
+		await otpRecord.save();
+
+		res.status(200).json({
+			status: "success",
+			message: "OTP verified successfully",
+		});
+	} catch (error) {
+		next(new ApiError("Something went wrong " + error, 500));
+	}
+};
+
+exports.changePassword = async (req, res, next) => {
+	try {
+		const { phone, newPassword } = req.body;
+
+		const otpRecord = await OTP.findOne({ phone, verified: true });
+		if (!otpRecord) {
+			return next(new ApiError("OTP not verified or expired", 400));
+		}
+
+		const student = await Student.findOne({ phone });
+		if (!student) {
+			return next(new ApiError("User not found", 404));
+		}
+
+		const hashedPassword = await bcryptjs.hash(newPassword, 12);
+
+		student.password = hashedPassword;
+		await student.save();
+
+		await OTP.deleteOne({ _id: otpRecord._id });
+
+		res.status(200).json({
+			status: "success",
+			message: "Password updated successfully",
+		});
+	} catch (error) {
+		next(new ApiError("Something went wrong " + error, 500));
+	}
 };
