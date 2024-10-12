@@ -1,4 +1,5 @@
 const Diploma = require("../models/DiplomaModel");
+const Student = require("../models/StudentModel");
 const ApiError = require("../util/ApiError");
 
 exports.createDiploma = async (req, res, next) => {
@@ -105,5 +106,54 @@ exports.updateDiploma = async (req, res, next) => {
 		});
 	} catch (error) {
 		return next(new ApiError("Somthing went wrong : " + error, 500));
+	}
+};
+
+exports.getStudentDiplomas = async (req, res, next) => {
+	try {
+		const studentId = req.user._id;
+
+		const student = await Student.findById(studentId).populate({
+			path: "enrolledDiplomas.diploma",
+			model: "Diploma",
+			select: "title description chapters",
+			populate: {
+				path: "chapters",
+				model: "Chapter",
+				select: "title levelOne levelTwo levelThree levelFour levelFive",
+			},
+		});
+
+		if (!student) {
+			return res.status(404).json({ message: "Student not found" });
+		}
+
+		const diplomasData = student.enrolledDiplomas.map((enrolled) => {
+			const diploma = enrolled.diploma;
+			const completedLevels = enrolled.completedLevels;
+
+			const totalLevels = diploma.chapters.reduce((acc, chapter) => {
+				return acc + 5;
+			}, 0);
+
+			const completedCount = completedLevels.reduce((acc, completedChapter) => {
+				return acc + completedChapter.levelIds.length;
+			}, 0);
+
+			const completionPercentage = (
+				(completedCount / totalLevels) *
+				100
+			).toFixed(2);
+
+			return {
+				title: diploma.title,
+				description: diploma.description,
+				percentageCompleted: completionPercentage,
+			};
+		});
+
+		return res.status(200).json(diplomasData);
+	} catch (error) {
+		return next(new ApiError("Something went wrong: " + error.message, 500));
 	}
 };

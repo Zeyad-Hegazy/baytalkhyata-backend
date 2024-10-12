@@ -9,6 +9,7 @@ const {
 	getProduct,
 } = require("../controllers/productController");
 
+const { getStudentDiplomas } = require("../controllers/diplomaController");
 const { streamChapterLevelFiles } = require("../controllers/chapterController");
 
 const { pagination } = require("../middlewares/pagination");
@@ -23,5 +24,7 @@ router.get(
 	"/chapters/:chapterId/levels/:levelType/:fileType",
 	streamChapterLevelFiles
 );
+
+router.get("/diploma", getStudentDiplomas);
 
 module.exports = router;
