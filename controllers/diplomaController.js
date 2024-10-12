@@ -1,6 +1,11 @@
 const Diploma = require("../models/DiplomaModel");
 const Student = require("../models/StudentModel");
 const ApiError = require("../util/ApiError");
+const {
+	calculateCompletionPercentage,
+	calculateChapterCompletionPercentage,
+	calculateTotalPointsForChapter,
+} = require("../util/diplomaCalcs");
 
 exports.createDiploma = async (req, res, next) => {
 	const { title, description, totalPoints, price, totalHours, expiresIn } =
@@ -110,37 +115,6 @@ exports.updateDiploma = async (req, res, next) => {
 };
 
 // Studnet Mobile
-
-const calculateCompletionPercentage = (chapters, completedLevels) => {
-	const totalLevels = chapters.reduce((acc, chapter) => acc + 5, 0);
-
-	const completedCount = completedLevels.reduce(
-		(acc, completedChapter) => acc + completedChapter.levelIds.length,
-		0
-	);
-
-	const completionPercentage = ((completedCount / totalLevels) * 100).toFixed(
-		2
-	);
-	return completionPercentage;
-};
-
-const calculateChapterCompletionPercentage = (chapter, completedLevels) => {
-	const totalLevels = 5;
-
-	const completedChapter = completedLevels.find(
-		(completed) => completed.chapterId.toString() === chapter._id.toString()
-	);
-
-	const completedCount = completedChapter
-		? completedChapter.levelIds.length
-		: 0;
-
-	const completionPercentage = ((completedCount / totalLevels) * 100).toFixed(
-		2
-	);
-	return completionPercentage;
-};
 
 exports.getStudentAllDiplomas = async (req, res, next) => {
 	try {
@@ -366,29 +340,3 @@ exports.getDiplomaChapters = async (req, res, next) => {
 		return next(new ApiError("Something went wrong: " + error.message, 500));
 	}
 };
-
-function calculateTotalPointsForChapter(chapter, completedLevelIds) {
-	let totalPoints = 0;
-
-	const levels = [
-		...chapter.levelOne,
-		...chapter.levelTwo,
-		...chapter.levelThree,
-		...chapter.levelFour,
-	];
-
-	levels.forEach((level) => {
-		if (completedLevelIds.includes(level._id.toString())) {
-			totalPoints += level.points;
-		}
-	});
-
-	if (
-		chapter.levelFive &&
-		completedLevelIds.includes(chapter.levelFive.toString())
-	) {
-		// TODO fetch Quiz model to get it's score
-	}
-
-	return totalPoints;
-}
