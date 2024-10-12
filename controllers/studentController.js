@@ -344,24 +344,39 @@ exports.assignDiploma = async (req, res, next) => {
 	try {
 		const userFound = await Student.findById(userId).select("-password -role");
 		if (!userFound) {
-			return next(new ApiError("user not found", 404));
+			return next(new ApiError("User not found", 404));
 		}
 
 		const diplomaFound = await Diploma.findById(diplomaId);
 		if (!diplomaFound) {
-			return next(new ApiError("diploma not found", 404));
+			return next(new ApiError("Diploma not found", 404));
 		}
 
-		userFound.enrolledDiplomas.push(diplomaId);
+		const alreadyEnrolled = userFound.enrolledDiplomas.some(
+			(enrolled) => enrolled.diploma.toString() === diplomaId
+		);
+
+		if (alreadyEnrolled) {
+			return next(
+				new ApiError("Student is already enrolled in this diploma", 400)
+			);
+		}
+
+		userFound.enrolledDiplomas.push({
+			diploma: diplomaId,
+			progress: 0,
+			completedLevels: [],
+		});
+
 		await userFound.save();
 
 		return res.status(200).json({
 			status: "success",
-			result: userFound,
+			result: null,
 			success: true,
-			message: "success",
+			message: "Diploma successfully assigned",
 		});
 	} catch (error) {
-		next(new ApiError("somthing went wrong " + error, 500));
+		next(new ApiError("Something went wrong: " + error.message, 500));
 	}
 };
