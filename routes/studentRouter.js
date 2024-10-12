@@ -9,7 +9,13 @@ const {
 	getProduct,
 } = require("../controllers/productController");
 
-const { getStudentDiplomas } = require("../controllers/diplomaController");
+const {
+	getStudentDiplomas,
+	getBookMarkedDiplomas,
+	getStudentAllDiplomas,
+	toggleDiplomaBookmark,
+} = require("../controllers/diplomaController");
+
 const { streamChapterLevelFiles } = require("../controllers/chapterController");
 
 const { pagination } = require("../middlewares/pagination");
@@ -25,6 +31,9 @@ router.get(
 	streamChapterLevelFiles
 );
 
+router.get("/all/diploma", getStudentAllDiplomas);
 router.get("/diploma", getStudentDiplomas);
+router.get("/diploma/bookmark", getBookMarkedDiplomas);
+router.patch("/diploma/bookmark/:diplomaId", toggleDiplomaBookmark);
 
 module.exports = router;

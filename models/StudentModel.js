@@ -28,6 +28,7 @@ const StudentSchema = new mongoose.Schema(
 		ownedProdcuts: [
 			{ type: mongoose.Schema.ObjectId, ref: "Product", default: [] },
 		],
+		bookMarkedDiplomas: [{ type: mongoose.Schema.ObjectId, ref: "Diploma" }],
 		role: { type: String, default: "user" },
 		lastSeen: { type: Date, default: Date.now },
 	},

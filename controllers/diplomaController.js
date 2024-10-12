@@ -109,6 +109,25 @@ exports.updateDiploma = async (req, res, next) => {
 	}
 };
 
+// Studnet Mobile
+
+exports.getStudentAllDiplomas = async (req, res, next) => {
+	try {
+		const diplomas = await Diploma.find({}).select(
+			"title description totalHours price totalPoints expiresIn"
+		);
+
+		return res.status(200).json({
+			status: "success",
+			result: diplomas,
+			success: true,
+			message: "success",
+		});
+	} catch (error) {
+		return next(new ApiError("Something went wrong : " + error, 500));
+	}
+};
+
 exports.getStudentDiplomas = async (req, res, next) => {
 	try {
 		const studentId = req.user._id;
@@ -152,7 +171,84 @@ exports.getStudentDiplomas = async (req, res, next) => {
 			};
 		});
 
-		return res.status(200).json(diplomasData);
+		return res.status(200).json({
+			status: "success",
+			result: diplomasData,
+			success: true,
+			message: "success",
+		});
+	} catch (error) {
+		return next(new ApiError("Something went wrong: " + error.message, 500));
+	}
+};
+
+exports.getBookMarkedDiplomas = async (req, res, next) => {
+	try {
+		const studentId = req.user._id;
+
+		const student = await Student.findById(studentId).populate({
+			path: "bookMarkedDiplomas",
+			model: "Diploma",
+			select: "title description totalHours price totalPoints expiresIn",
+		});
+
+		if (!student) {
+			return res.status(404).json({ message: "Student not found" });
+		}
+
+		const diplomasData = student.bookMarkedDiplomas.map((bookMarkerDiploma) => {
+			return {
+				title: bookMarkerDiploma.title,
+				description: bookMarkerDiploma.description,
+				totalHours: bookMarkerDiploma.totalHours,
+				price: bookMarkerDiploma.price,
+				totalPoints: bookMarkerDiploma.totalPoints,
+				expiresIn: bookMarkerDiploma.expiresIn,
+			};
+		});
+
+		return res.status(200).json({
+			status: "success",
+			result: diplomasData,
+			success: true,
+			message: "success",
+		});
+	} catch (error) {
+		return next(new ApiError("Something went wrong: " + error.message, 500));
+	}
+};
+
+exports.toggleDiplomaBookmark = async (req, res, next) => {
+	try {
+		const studentId = req.user._id;
+		const { diplomaId } = req.params;
+
+		const student = await Student.findById(studentId);
+
+		if (!student) {
+			return res.status(404).json({ message: "Student not found" });
+		}
+
+		const isBookmarked = student.bookMarkedDiplomas.includes(diplomaId);
+
+		if (isBookmarked) {
+			student.bookMarkedDiplomas = student.bookMarkedDiplomas.filter(
+				(id) => id.toString() !== diplomaId
+			);
+		} else {
+			student.bookMarkedDiplomas.push(diplomaId);
+		}
+
+		await student.save();
+
+		return res.status(200).json({
+			status: "success",
+			result: student.bookMarkedDiplomas,
+			success: true,
+			message: isBookmarked
+				? "Diploma removed from bookmarks"
+				: "Diploma added to bookmarks",
+		});
 	} catch (error) {
 		return next(new ApiError("Something went wrong: " + error.message, 500));
 	}
