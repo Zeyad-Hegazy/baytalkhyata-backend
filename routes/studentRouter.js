@@ -14,6 +14,7 @@ const {
 	getBookMarkedDiplomas,
 	getStudentAllDiplomas,
 	toggleDiplomaBookmark,
+	getDiplomaChapters,
 } = require("../controllers/diplomaController");
 
 const { streamChapterLevelFiles } = require("../controllers/chapterController");
@@ -35,5 +36,6 @@ router.get("/all/diploma", getStudentAllDiplomas);
 router.get("/diploma", getStudentDiplomas);
 router.get("/diploma/bookmark", getBookMarkedDiplomas);
 router.patch("/diploma/bookmark/:diplomaId", toggleDiplomaBookmark);
+router.get("/diploma/chapter/:diplomaId", getDiplomaChapters);
 
 module.exports = router;

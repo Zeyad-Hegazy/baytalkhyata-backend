@@ -111,6 +111,37 @@ exports.updateDiploma = async (req, res, next) => {
 
 // Studnet Mobile
 
+const calculateCompletionPercentage = (chapters, completedLevels) => {
+	const totalLevels = chapters.reduce((acc, chapter) => acc + 5, 0);
+
+	const completedCount = completedLevels.reduce(
+		(acc, completedChapter) => acc + completedChapter.levelIds.length,
+		0
+	);
+
+	const completionPercentage = ((completedCount / totalLevels) * 100).toFixed(
+		2
+	);
+	return completionPercentage;
+};
+
+const calculateChapterCompletionPercentage = (chapter, completedLevels) => {
+	const totalLevels = 5;
+
+	const completedChapter = completedLevels.find(
+		(completed) => completed.chapterId.toString() === chapter._id.toString()
+	);
+
+	const completedCount = completedChapter
+		? completedChapter.levelIds.length
+		: 0;
+
+	const completionPercentage = ((completedCount / totalLevels) * 100).toFixed(
+		2
+	);
+	return completionPercentage;
+};
+
 exports.getStudentAllDiplomas = async (req, res, next) => {
 	try {
 		const diplomas = await Diploma.find({}).select(
@@ -151,20 +182,13 @@ exports.getStudentDiplomas = async (req, res, next) => {
 			const diploma = enrolled.diploma;
 			const completedLevels = enrolled.completedLevels;
 
-			const totalLevels = diploma.chapters.reduce((acc, chapter) => {
-				return acc + 5;
-			}, 0);
-
-			const completedCount = completedLevels.reduce((acc, completedChapter) => {
-				return acc + completedChapter.levelIds.length;
-			}, 0);
-
-			const completionPercentage = (
-				(completedCount / totalLevels) *
-				100
-			).toFixed(2);
+			const completionPercentage = calculateCompletionPercentage(
+				diploma.chapters,
+				completedLevels
+			);
 
 			return {
+				_id: diploma._id,
 				title: diploma.title,
 				description: diploma.description,
 				percentageCompleted: completionPercentage,
@@ -198,6 +222,7 @@ exports.getBookMarkedDiplomas = async (req, res, next) => {
 
 		const diplomasData = student.bookMarkedDiplomas.map((bookMarkerDiploma) => {
 			return {
+				_id: bookMarkerDiploma._id,
 				title: bookMarkerDiploma.title,
 				description: bookMarkerDiploma.description,
 				totalHours: bookMarkerDiploma.totalHours,
@@ -253,3 +278,117 @@ exports.toggleDiplomaBookmark = async (req, res, next) => {
 		return next(new ApiError("Something went wrong: " + error.message, 500));
 	}
 };
+
+exports.getDiplomaChapters = async (req, res, next) => {
+	try {
+		const studentId = req.user._id;
+		const { diplomaId } = req.params;
+
+		const student = await Student.findById(studentId).populate({
+			path: "enrolledDiplomas.diploma",
+			model: "Diploma",
+			select: "title description totalPoints totalHours chapters",
+			populate: {
+				path: "chapters",
+				model: "Chapter",
+				select:
+					"title description levelOne levelTwo levelThree levelFour levelFive",
+			},
+		});
+
+		if (!student) {
+			return res.status(404).json({ message: "Student not found" });
+		}
+
+		const enrolledDiploma = student.enrolledDiplomas.find(
+			(enrolled) => enrolled.diploma._id.toString() === diplomaId
+		);
+
+		if (!enrolledDiploma) {
+			return res
+				.status(404)
+				.json({ message: "Diploma not found for this student" });
+		}
+
+		const diploma = enrolledDiploma.diploma;
+		const completedLevels = enrolledDiploma.completedLevels || [];
+
+		const chaptersData = diploma.chapters.map((chapter) => {
+			const completedChapterLevels = completedLevels.find(
+				(completed) =>
+					completed.chapterId &&
+					completed.chapterId.toString() === chapter._id.toString()
+			);
+
+			const completedLevelIds = completedChapterLevels
+				? completedChapterLevels.levelIds
+				: [];
+
+			const totalPoints = calculateTotalPointsForChapter(
+				chapter,
+				completedLevelIds
+			);
+
+			const percentageCompleted = calculateChapterCompletionPercentage(
+				chapter,
+				completedLevelIds,
+				totalPoints
+			);
+
+			return {
+				_id: chapter._id,
+				title: chapter.title,
+				description: chapter.description,
+				percentageCompleted,
+				totalPoints,
+			};
+		});
+
+		const completionPercentage = calculateCompletionPercentage(
+			diploma.chapters,
+			completedLevels
+		);
+
+		return res.status(200).json({
+			status: "success",
+			data: {
+				_id: diploma._id,
+				title: diploma.title,
+				percentageCompleted: completionPercentage,
+				totalPoints: diploma.totalPoints,
+				totalHours: diploma.totalHours,
+				chapters: chaptersData,
+			},
+			success: true,
+			message: "success",
+		});
+	} catch (error) {
+		return next(new ApiError("Something went wrong: " + error.message, 500));
+	}
+};
+
+function calculateTotalPointsForChapter(chapter, completedLevelIds) {
+	let totalPoints = 0;
+
+	const levels = [
+		...chapter.levelOne,
+		...chapter.levelTwo,
+		...chapter.levelThree,
+		...chapter.levelFour,
+	];
+
+	levels.forEach((level) => {
+		if (completedLevelIds.includes(level._id.toString())) {
+			totalPoints += level.points;
+		}
+	});
+
+	if (
+		chapter.levelFive &&
+		completedLevelIds.includes(chapter.levelFive.toString())
+	) {
+		// TODO fetch Quiz model to get it's score
+	}
+
+	return totalPoints;
+}
