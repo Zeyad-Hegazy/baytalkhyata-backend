@@ -205,9 +205,34 @@ exports.getChapterLevel = async (req, res) => {
 				return res.status(400).json({ message: "Invalid level type" });
 		}
 
+		const updatedLevelArray = levelArray.map((item) => {
+			if (item.file) {
+				const fileExtension = item.file.split(".").pop().toLowerCase();
+				let folder;
+
+				if (["jpg", "jpeg", "png", "gif"].includes(fileExtension)) {
+					folder = "images";
+				} else if (["pdf"].includes(fileExtension)) {
+					folder = "pdfs";
+				} else if (["mp3", "wav", "ogg"].includes(fileExtension)) {
+					folder = "audios";
+				} else if (["mp4", "avi", "mov", "mkv"].includes(fileExtension)) {
+					folder = "videos";
+				} else {
+					return item;
+				}
+
+				return {
+					...item._doc,
+					file: `${res.locals.baseUrl}/uploads/${folder}/${item.file}`,
+				};
+			}
+			return item;
+		});
+
 		res.status(200).json({
 			status: "success",
-			result: levelArray,
+			result: updatedLevelArray,
 			success: true,
 			message: "success",
 		});
