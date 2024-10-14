@@ -219,6 +219,33 @@ exports.getChapterLevel = async (req, res) => {
 exports.getQuizLevel = async (req, res, next) => {
 	try {
 		const { chapterId } = req.params;
+
+		const chapter = await Chapter.findById(chapterId).populate({
+			path: "levelFive",
+			model: "Quiz",
+			select: "title chapter questions totalScore",
+			populate: {
+				path: "questions",
+				model: "Question",
+				select: "text score answers",
+				populate: {
+					path: "answers",
+					model: "Answer",
+					select: "text",
+				},
+			},
+		});
+
+		if (!chapter) {
+			return res.status(404).json({ message: "Chapter not found" });
+		}
+
+		res.status(200).json({
+			status: "success",
+			result: chapter.levelFive,
+			success: true,
+			message: "success",
+		});
 	} catch (error) {
 		res.status(500).json({ message: "Server error", error: error.message });
 	}

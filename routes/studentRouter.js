@@ -20,6 +20,7 @@ const {
 const {
 	streamChapterLevelFiles,
 	getChapterLevel,
+	getQuizLevel,
 } = require("../controllers/chapterController");
 
 const { pagination } = require("../middlewares/pagination");
@@ -30,12 +31,13 @@ router.patch("/product/redeem/:productId", redeemProduct);
 router.get("/product", pagination, getProducts);
 router.get("/product/:productId", getProduct);
 
-router.get("/chapters/:chapterId/levels/:levelType", getChapterLevel);
+router.get("/diploma/chapter/:chapterId/levels/:levelType", getChapterLevel);
 
-router.get("/all/diploma", getStudentAllDiplomas);
+router.get("/diploma/all", getStudentAllDiplomas);
 router.get("/diploma", getStudentDiplomas);
 router.get("/diploma/bookmark", getBookMarkedDiplomas);
 router.patch("/diploma/bookmark/:diplomaId", toggleDiplomaBookmark);
 router.get("/diploma/chapter/:diplomaId", getDiplomaChapters);
+router.get("/diploma/chapter/quiz/:chapterId", getQuizLevel);
 
 module.exports = router;
