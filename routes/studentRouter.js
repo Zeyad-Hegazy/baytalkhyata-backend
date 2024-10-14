@@ -17,7 +17,10 @@ const {
 	getDiplomaChapters,
 } = require("../controllers/diplomaController");
 
-const { streamChapterLevelFiles } = require("../controllers/chapterController");
+const {
+	streamChapterLevelFiles,
+	getChapterLevel,
+} = require("../controllers/chapterController");
 
 const { pagination } = require("../middlewares/pagination");
 
@@ -27,10 +30,7 @@ router.patch("/product/redeem/:productId", redeemProduct);
 router.get("/product", pagination, getProducts);
 router.get("/product/:productId", getProduct);
 
-router.get(
-	"/chapters/:chapterId/levels/:levelType/:fileType",
-	streamChapterLevelFiles
-);
+router.get("/chapters/:chapterId/levels/:levelType", getChapterLevel);
 
 router.get("/all/diploma", getStudentAllDiplomas);
 router.get("/diploma", getStudentDiplomas);
