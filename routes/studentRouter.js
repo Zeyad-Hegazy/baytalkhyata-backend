@@ -21,6 +21,7 @@ const {
 	streamChapterLevelFiles,
 	getChapterLevel,
 	getQuizLevel,
+	completeLevel,
 } = require("../controllers/chapterController");
 
 const { pagination } = require("../middlewares/pagination");
@@ -39,5 +40,9 @@ router.get("/diploma/bookmark", getBookMarkedDiplomas);
 router.patch("/diploma/bookmark/:diplomaId", toggleDiplomaBookmark);
 router.get("/diploma/chapter/:diplomaId", getDiplomaChapters);
 router.get("/diploma/chapter/quiz/:chapterId", getQuizLevel);
+router.patch(
+	"/diploma/:diplomaId/chapter/:chapterId/:levelType",
+	completeLevel
+);
 
 module.exports = router;

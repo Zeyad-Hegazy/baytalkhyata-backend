@@ -274,9 +274,12 @@ exports.getDiplomaChapters = async (req, res, next) => {
 			return res.status(404).json({ message: "Student not found" });
 		}
 
-		const enrolledDiploma = student.enrolledDiplomas.find(
-			(enrolled) => enrolled.diploma._id.toString() === diplomaId
-		);
+		const enrolledDiploma = student.enrolledDiplomas.find((enrolled) => {
+			if (enrolled.diploma && enrolled.diploma._id) {
+				return enrolled.diploma._id.toString() === diplomaId.toString();
+			}
+			return false;
+		});
 
 		if (!enrolledDiploma) {
 			return res
@@ -290,8 +293,7 @@ exports.getDiplomaChapters = async (req, res, next) => {
 		const chaptersData = diploma.chapters.map((chapter) => {
 			const completedChapterLevels = completedLevels.find(
 				(completed) =>
-					completed.chapterId &&
-					completed.chapterId.toString() === chapter._id.toString()
+					completed && completed.toString() === chapter._id.toString()
 			);
 
 			const completedLevelIds = completedChapterLevels
@@ -305,8 +307,7 @@ exports.getDiplomaChapters = async (req, res, next) => {
 
 			const percentageCompleted = calculateChapterCompletionPercentage(
 				chapter,
-				completedLevelIds,
-				totalPoints
+				completedLevelIds
 			);
 
 			return {

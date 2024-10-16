@@ -3,6 +3,8 @@ const path = require("path");
 
 const Chapter = require("../models/ChapterModel");
 const Diploma = require("../models/DiplomaModel");
+const Student = require("../models/StudentModel");
+const Level = require("../models/LevelModel");
 const ApiError = require("../util/ApiError");
 
 const { saveAndDeleteVideo } = require("../util/videoUtility");
@@ -273,6 +275,78 @@ exports.getQuizLevel = async (req, res, next) => {
 		});
 	} catch (error) {
 		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+exports.completeLevel = async (req, res, next) => {
+	try {
+		const { diplomaId, chapterId, levelType } = req.params;
+		const studentId = req.user._id;
+
+		const student = await Student.findById(studentId);
+		if (!student) {
+			return res.status(404).json({ message: "Student not found" });
+		}
+
+		const enrolledDiploma = student.enrolledDiplomas.find(
+			(diploma) => diploma.diploma.toString() === diplomaId
+		);
+
+		if (!enrolledDiploma) {
+			return res.status(404).json({ message: "Enrolled diploma not found" });
+		}
+
+		const completedChapter = enrolledDiploma.completedLevels.find(
+			(level) => level.chapterId.toString() === chapterId
+		);
+
+		if (completedChapter) {
+			completedChapter.levelIds.push(levelType);
+		} else {
+			enrolledDiploma.completedLevels.push({
+				chapterId,
+				levelIds: [levelType],
+			});
+		}
+
+		let totalPoints = 0;
+		for (const completedChapter of enrolledDiploma.completedLevels) {
+			const chapter = await Chapter.findById(completedChapter.chapterId);
+			if (chapter) {
+				["levelOne", "levelTwo", "levelThree", "levelFour"].forEach(
+					(levelGroup) => {
+						chapter[levelGroup].forEach((level) => {
+							if (completedChapter.levelIds.includes(level._id.toString())) {
+								totalPoints += level.points;
+							}
+						});
+					}
+				);
+
+				// if (
+				// 	chapter.levelFive &&
+				// 	completedChapter.levelIds.includes(chapter.levelFive.toString())
+				// ) {
+				// 	const quiz = await Level.findById(chapter.levelFive); // Assuming you use Level model for quizzes
+				// 	if (quiz) {
+				// 		totalPoints += quiz.points;
+				// 	}
+				// }
+			}
+		}
+
+		student.points = totalPoints;
+
+		await student.save();
+
+		return res
+			.status(200)
+			.json({ message: "Level completed successfully", student });
+	} catch (error) {
+		console.error(error);
+		return res
+			.status(500)
+			.json({ message: "An error occurred while completing the level" });
 	}
 };
 

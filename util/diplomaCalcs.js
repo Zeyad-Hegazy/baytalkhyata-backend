@@ -15,14 +15,37 @@ exports.calculateCompletionPercentage = (chapters, completedLevels) => {
 exports.calculateChapterCompletionPercentage = (chapter, completedLevels) => {
 	const totalLevels = 5;
 
+	// Find the completed levels for the specific chapter
 	const completedChapter = completedLevels.find(
 		(completed) => completed.chapterId.toString() === chapter._id.toString()
 	);
 
-	const completedCount = completedChapter
-		? completedChapter.levelIds.length
-		: 0;
+	// If the chapter has no completed levels, set completedCount to 0
+	let completedCount = 0;
+	if (completedChapter) {
+		// Mapping the levels by name
+		const levelNames = ["levelOne", "levelTwo", "levelThree", "levelFour"];
 
+		// Iterate through the level names to count completed levels
+		levelNames.forEach((levelName) => {
+			const levels = chapter[levelName];
+			levels.forEach((level) => {
+				if (completedChapter.levelIds.includes(level._id.toString())) {
+					completedCount++;
+				}
+			});
+		});
+
+		// Check if levelFive (quiz) is completed
+		if (
+			chapter.levelFive &&
+			completedChapter.levelIds.includes(chapter.levelFive.toString())
+		) {
+			completedCount++;
+		}
+	}
+
+	// Calculate the completion percentage based on the total levels
 	const completionPercentage = ((completedCount / totalLevels) * 100).toFixed(
 		2
 	);
@@ -32,24 +55,28 @@ exports.calculateChapterCompletionPercentage = (chapter, completedLevels) => {
 exports.calculateTotalPointsForChapter = (chapter, completedLevelIds) => {
 	let totalPoints = 0;
 
-	const levels = [
-		...chapter.levelOne,
-		...chapter.levelTwo,
-		...chapter.levelThree,
-		...chapter.levelFour,
-	];
+	// Mapping level names to their corresponding arrays in the chapter
+	const levelNames = ["levelOne", "levelTwo", "levelThree", "levelFour"];
 
-	levels.forEach((level) => {
-		if (completedLevelIds.includes(level._id.toString())) {
-			totalPoints += level.points;
-		}
+	// Iterate over each level name and accumulate points if the level ID is completed
+	levelNames.forEach((levelName) => {
+		const levels = chapter[levelName];
+		levels.forEach((level) => {
+			if (completedLevelIds.includes(level._id.toString())) {
+				totalPoints += level.points;
+			}
+		});
 	});
 
+	// Handle the levelFive separately (Quiz)
 	if (
 		chapter.levelFive &&
 		completedLevelIds.includes(chapter.levelFive.toString())
 	) {
-		// TODO fetch Quiz model to get it's score
+		// TODO: Fetch the Quiz model to get its score
+		// Assuming you have a function to fetch the quiz points based on its ID
+		// const quizPoints = await fetchQuizPoints(chapter.levelFive);
+		// totalPoints += quizPoints;
 	}
 
 	return totalPoints;

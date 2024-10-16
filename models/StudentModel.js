@@ -7,7 +7,7 @@ const enrolledDiplomaSchema = new mongoose.Schema(
 		completedLevels: [
 			{
 				chapterId: { type: mongoose.Schema.ObjectId, ref: "Chapter" },
-				levelIds: [{ type: mongoose.Schema.ObjectId }],
+				levelIds: [String],
 			},
 		],
 	},
