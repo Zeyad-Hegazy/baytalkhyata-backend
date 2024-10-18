@@ -283,13 +283,24 @@ exports.completeLevel = async (req, res, next) => {
 		const { diplomaId, chapterId, levelType } = req.params;
 		const studentId = req.user._id;
 
-		const student = await Student.findById(studentId);
+		const student = await Student.findById(studentId)
+			.select("enrolledDiplomas")
+			.populate({
+				path: "enrolledDiplomas.diploma",
+				model: "Diploma",
+				select: "chapters",
+				populate: {
+					path: "chapters",
+					model: "Chapter",
+					select: `levelIds.${levelType} ${levelType}`,
+				},
+			});
 		if (!student) {
 			return res.status(404).json({ message: "Student not found" });
 		}
 
 		const enrolledDiploma = student.enrolledDiplomas.find(
-			(diploma) => diploma.diploma.toString() === diplomaId
+			(diploma) => diploma.diploma._id.toString() === diplomaId
 		);
 
 		if (!enrolledDiploma) {
@@ -300,41 +311,27 @@ exports.completeLevel = async (req, res, next) => {
 			(level) => level.chapterId.toString() === chapterId
 		);
 
+		const currentChapter = enrolledDiploma.diploma.chapters.find(
+			(chapter) => chapter._id.toString() === chapterId
+		);
+
+		// return res.status(200).json(currentChapter);
+
 		if (completedChapter) {
-			completedChapter.levelIds.push(levelType);
+			completedChapter.levelIds[levelType] = currentChapter.levelIds[levelType];
 		} else {
 			enrolledDiploma.completedLevels.push({
 				chapterId,
-				levelIds: [levelType],
+				levelIds: { [levelType]: currentChapter.levelIds[levelType] },
 			});
 		}
 
 		let totalPoints = 0;
-		for (const completedChapter of enrolledDiploma.completedLevels) {
-			const chapter = await Chapter.findById(completedChapter.chapterId);
-			if (chapter) {
-				["levelOne", "levelTwo", "levelThree", "levelFour"].forEach(
-					(levelGroup) => {
-						chapter[levelGroup].forEach((level) => {
-							if (completedChapter.levelIds.includes(level._id.toString())) {
-								totalPoints += level.points;
-							}
-						});
-					}
-				);
-
-				// if (
-				// 	chapter.levelFive &&
-				// 	completedChapter.levelIds.includes(chapter.levelFive.toString())
-				// ) {
-				// 	const quiz = await Level.findById(chapter.levelFive); // Assuming you use Level model for quizzes
-				// 	if (quiz) {
-				// 		totalPoints += quiz.points;
-				// 	}
-				// }
-			}
+		for (const level of currentChapter[levelType]) {
+			totalPoints += level.points;
 		}
 
+		enrolledDiploma.totalPointsEarned = totalPoints;
 		student.points = totalPoints;
 
 		await student.save();

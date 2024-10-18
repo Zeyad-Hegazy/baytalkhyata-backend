@@ -14,6 +14,12 @@ const ChapterSchema = new mongoose.Schema(
 	{
 		title: { type: String, required: true },
 		diploma: { type: mongoose.Schema.ObjectId, ref: "Diploma" },
+		levelIds: {
+			levelOne: { type: mongoose.Schema.ObjectId, auto: true },
+			levelTwo: { type: mongoose.Schema.ObjectId, auto: true },
+			levelThree: { type: mongoose.Schema.ObjectId, auto: true },
+			levelFour: { type: mongoose.Schema.ObjectId, auto: true },
+		},
 		levelOne: [levelSchema],
 		levelTwo: [levelSchema],
 		levelThree: [levelSchema],
