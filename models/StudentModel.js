@@ -24,6 +24,19 @@ const enrolledDiplomaSchema = new mongoose.Schema(
 	},
 	{ _id: false }
 );
+
+const quizesTakenSchema = new mongoose.Schema(
+	{
+		quiz: { type: mongoose.Schema.ObjectId, ref: "Quiz", required: true },
+		correctAnswers: { type: Number, default: 0 },
+		submetedAnswers: [
+			{ type: mongoose.Schema.ObjectId, ref: "Answer", required: true },
+		],
+		score: { type: Number, default: 0 },
+	},
+	{ _id: false }
+);
+
 const StudentSchema = new mongoose.Schema(
 	{
 		fullName: { type: String, required: true },
@@ -39,6 +52,10 @@ const StudentSchema = new mongoose.Schema(
 			{ type: mongoose.Schema.ObjectId, ref: "Product", default: [] },
 		],
 		bookMarkedDiplomas: [{ type: mongoose.Schema.ObjectId, ref: "Diploma" }],
+		quizesTaken: {
+			type: [quizesTakenSchema],
+			default: [],
+		},
 		role: { type: String, default: "user" },
 		lastSeen: { type: Date, default: Date.now },
 	},

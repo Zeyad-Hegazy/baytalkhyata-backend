@@ -347,6 +347,63 @@ exports.completeLevel = async (req, res, next) => {
 	}
 };
 
+exports.submitAnswer = async (req, res, next) => {
+	try {
+		const { answerId, quizId } = req.params;
+		const studentId = req.user._id;
+
+		const selectedAnswer = await Answer.findById(answerId);
+		if (!selectedAnswer) {
+			return res.status(404).json({ message: "Answer not found" });
+		}
+
+		const student = await Student.findById(studentId).populate({
+			path: "quizesTaken",
+		});
+
+		const question = await Question.findOne({ answers: { $in: answerId } });
+
+		if (!student) {
+			return res.status(404).json({ message: "Student not found" });
+		}
+
+		let quizTaken = student.quizesTaken.find(
+			(quiz) => quiz.quiz.toString() === quizId
+		);
+
+		if (!quizTaken) {
+			const isCorrectAnswer = selectedAnswer.isCorrect;
+			quizTaken = {
+				quiz: quizId,
+				correctAnswers: isCorrectAnswer ? 1 : 0,
+				submetedAnswers: [answerId],
+				score: isCorrectAnswer ? question.score : 0,
+			};
+			student.quizesTaken.push(quizTaken);
+		} else {
+			if (selectedAnswer.isCorrect) {
+				quizTaken.correctAnswers += 1;
+				quizTaken.score += question.score;
+				quizTaken.submetedAnswers.push(answerId);
+			}
+		}
+
+		await student.save();
+
+		return res.status(200).json({
+			message: "Answer submitted successfully",
+			isCorrect: selectedAnswer.isCorrect,
+			totalCorrectAnswers: quizTaken.correctAnswers,
+			totalPoints: student.points,
+		});
+	} catch (error) {
+		console.error(error);
+		return res
+			.status(500)
+			.json({ message: "An error occurred while submitting the answer" });
+	}
+};
+
 // Controller to stream all files from one level of a chapter
 
 // Controller to stream all files from one level of a chapter

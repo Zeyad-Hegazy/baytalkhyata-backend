@@ -22,6 +22,7 @@ const {
 	getChapterLevel,
 	getQuizLevel,
 	completeLevel,
+	submitAnswer,
 } = require("../controllers/chapterController");
 
 const { pagination } = require("../middlewares/pagination");
@@ -44,5 +45,6 @@ router.patch(
 	"/diploma/:diplomaId/chapter/:chapterId/:levelType",
 	completeLevel
 );
+router.patch("/diploma/chapter/quiz/:quizId/answer/:answerId", submitAnswer);
 
 module.exports = router;
