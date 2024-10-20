@@ -33,6 +33,7 @@ const quizesTakenSchema = new mongoose.Schema(
 			{ type: mongoose.Schema.ObjectId, ref: "Answer", required: true },
 		],
 		score: { type: Number, default: 0 },
+		passed: { type: Boolean, default: false },
 	},
 	{ _id: false }
 );

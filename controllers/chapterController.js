@@ -378,6 +378,7 @@ exports.submitAnswer = async (req, res, next) => {
 				correctAnswers: isCorrectAnswer ? 1 : 0,
 				submetedAnswers: [answerId],
 				score: isCorrectAnswer ? question.score : 0,
+				passed: false,
 			};
 			student.quizesTaken.push(quizTaken);
 		} else {
@@ -401,6 +402,63 @@ exports.submitAnswer = async (req, res, next) => {
 		return res
 			.status(500)
 			.json({ message: "An error occurred while submitting the answer" });
+	}
+};
+
+exports.finishQuiz = async (req, res, next) => {
+	try {
+		const { quizId, chapterId, diplomaId } = req.params;
+		const studentId = req.user._id;
+
+		const student = await Student.findById(studentId).populate([
+			{ path: "quizesTaken.quiz" },
+			{ path: "enrolledDiplomas.diploma" },
+		]);
+
+		if (!student) {
+			return res.status(404).json({ message: "Student not found" });
+		}
+
+		const enrolledDiploma = student.enrolledDiplomas.find(
+			(diploma) => diploma.diploma._id.toString() === diplomaId
+		);
+
+		if (!enrolledDiploma) {
+			return res.status(404).json({ message: "Enrolled diploma not found" });
+		}
+
+		const quiz = await Quiz.findById(quizId).select("passedScore totalScore");
+		if (!quiz) {
+			return res.status(404).json({ message: "Quiz not found" });
+		}
+
+		let quizTaken = student.quizesTaken.find(
+			(quizEntry) => quizEntry.quiz._id.toString() === quizId
+		);
+
+		if (!quizTaken) {
+			return res.status(404).json({ message: "Quiz not taken" });
+		}
+
+		if (quizTaken.score >= quiz.passedScore) {
+			enrolledDiploma.completedChapters.push(chapterId);
+			quizTaken.passed = true;
+		} else {
+			return res.status(400).json({ message: "Quiz not passed" });
+		}
+
+		await student.save();
+
+		return res.status(200).json({
+			message: "Quiz finished successfully",
+			passed: quizTaken.passed,
+			totalCorrectAnswers: quizTaken.correctAnswers,
+		});
+	} catch (error) {
+		console.error(error);
+		return res
+			.status(500)
+			.json({ message: "Server error", error: error.message });
 	}
 };
 
