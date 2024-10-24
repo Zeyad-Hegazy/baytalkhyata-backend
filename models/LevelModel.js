@@ -4,9 +4,9 @@ const LevelSchema = new mongoose.Schema(
 	{
 		title: { type: String, required: true },
 		chapter: { type: mongoose.Schema.ObjectId, ref: "Chapter" },
-		items: [{ type: mongoose.Schema.ObjectId, ref: "Item" }],
-		isFinalQuiz: { type: Boolean, default: false },
-		quiz: { type: mongoose.Schema.ObjectId, ref: "Quiz" },
+		sections: [{ type: mongoose.Schema.ObjectId, ref: "Section", default: [] }],
+		order: Number,
+		finalQuiz: { type: mongoose.Schema.ObjectId, ref: "Quiz", default: null },
 	},
 	{ timestamps: true }
 );

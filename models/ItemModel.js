@@ -2,18 +2,18 @@ const mongoose = require("mongoose");
 
 const ItemSchema = new mongoose.Schema(
 	{
+		title: String,
+		description: String,
+		order: Number,
 		type: {
 			type: String,
 			required: true,
 			enum: ["video", "pdf", "image", "text", "audio", "quiz"],
 		},
-		content: {
-			publicId: String,
-			secureUrl: String,
-		},
+		file: String,
 		size: String,
 		points: { type: Number, default: 0 },
-		level: { type: mongoose.Schema.ObjectId, ref: "Level" },
+		section: { type: mongoose.Schema.ObjectId, ref: "Section" },
 	},
 	{ timestamps: true }
 );
