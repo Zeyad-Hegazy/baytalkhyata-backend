@@ -28,6 +28,8 @@ const {
 
 const { pagination } = require("../middlewares/pagination");
 
+const { getQuestions } = require("../controllers/FQAController");
+
 router.get("/profile", getAuthenticatedUser);
 
 router.patch("/product/redeem/:productId", redeemProduct);
@@ -48,5 +50,7 @@ router.patch(
 );
 router.patch("/diploma/chapter/quiz/:quizId/answer/:answerId", submitAnswer);
 router.patch("/diploma/:diplomaId/chapter/:chapterId/quiz/:quizId", finishQuiz);
+
+router.get("/FQA", getQuestions);
 
 module.exports = router;
