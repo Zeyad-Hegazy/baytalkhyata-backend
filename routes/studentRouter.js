@@ -29,6 +29,11 @@ const {
 const { pagination } = require("../middlewares/pagination");
 
 const { getQuestions } = require("../controllers/FQAController");
+const {
+	getItems,
+	getPdfFromCloudinary,
+	downloadPdfFromCloudinary,
+} = require("../controllers/libraryController");
 
 router.get("/profile", getAuthenticatedUser);
 
@@ -52,5 +57,9 @@ router.patch("/diploma/chapter/quiz/:quizId/answer/:answerId", submitAnswer);
 router.patch("/diploma/:diplomaId/chapter/:chapterId/quiz/:quizId", finishQuiz);
 
 router.get("/FQA", getQuestions);
+
+router.route("/library").get(getItems);
+router.route("/library/:itemId").get(getPdfFromCloudinary);
+router.route("/library/download/:itemId").get(downloadPdfFromCloudinary);
 
 module.exports = router;

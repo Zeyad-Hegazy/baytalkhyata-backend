@@ -1,3 +1,5 @@
+const path = require("path");
+const axios = require("axios");
 const Library = require("../models/LibraryModel");
 const ApiError = require("../util/ApiError");
 const cloudinary = require("../config/cloudinary");
@@ -60,36 +62,39 @@ exports.getPdfFromCloudinary = async (req, res, next) => {
 };
 
 exports.downloadPdfFromCloudinary = async (req, res, next) => {
-	const { itemId } = req.params; // Assuming the Library item ID is passed as a URL parameter
+	const { itemId } = req.params;
 
 	try {
 		const item = await Library.findById(itemId);
-		if (!item) {
-			return res.status(404).json({ error: "Library item not found" });
+		if (!item || !item.pdfFile) {
+			return res
+				.status(404)
+				.json({ error: "Library item not found or PDF not available" });
 		}
 
-		// Fetch the PDF from Cloudinary
-		const result = await cloudinary.api.resource(item.pdfFile.secureUrl, {
+		const result = await cloudinary.api.resource(item.pdfFile.publicId, {
 			resource_type: "raw",
 		});
 
-		// Download the PDF file
+		const pdfUrl = result.secure_url;
+		if (!pdfUrl) {
+			return res.status(404).json({ error: "PDF URL not found" });
+		}
+
 		const response = await axios({
-			url: result.secure_url,
+			url: pdfUrl,
 			method: "GET",
 			responseType: "stream",
 		});
 
-		// Set the filename for the download
-		const filename = path.basename(item.pdfFile);
+		const filename = path.basename(pdfUrl);
 
-		// Set headers for file download
-		res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+		res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
 		res.setHeader("Content-Type", "application/pdf");
 
-		// Pipe the PDF data to the response
 		response.data.pipe(res);
 	} catch (error) {
+		console.error("Error downloading PDF:", error);
 		res.status(500).json({ error: error.message });
 	}
 };
