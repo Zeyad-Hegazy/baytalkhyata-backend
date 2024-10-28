@@ -5,6 +5,9 @@ const Chapter = require("../models/ChapterModel");
 const Diploma = require("../models/DiplomaModel");
 const Student = require("../models/StudentModel");
 const Level = require("../models/LevelModel");
+const Section = require("../models/SectionModel");
+const Item = require("../models/ItemModel");
+
 const ApiError = require("../util/ApiError");
 
 const { saveAndDeleteVideo } = require("../util/videoUtility");
@@ -44,87 +47,191 @@ exports.createChapter = async (req, res, next) => {
 };
 
 exports.addLevelToChapter = async (req, res, next) => {
-	const { chapterId } = req.params;
-	const { level, video, audio, image, pdf, text } = req.body;
-
 	try {
-		const newLevel = [];
+		const { chapterId } = req.params;
+		const { title, order, sections } = req.body;
 
-		if (video.base64) {
-			const uploadedVideo = await saveAndDeleteVideo(
-				null,
-				video.base64,
-				"videos"
-			);
-			newLevel.push({
-				type: "video",
-				file: uploadedVideo,
-				points: video.points,
+		if (!title || !sections || !Array.isArray(sections)) {
+			return next(new ApiError("Invalid input data", 400));
+		}
+
+		const level = await Level.create({
+			title,
+			chapter: chapterId,
+			order,
+		});
+
+		await Chapter.findByIdAndUpdate(chapterId, {
+			$push: { levels: level._id },
+		});
+
+		const sectionPromises = sections.map(async (sectionData, index) => {
+			const newSection = await Section.create({
+				title: sectionData.title,
+				level: level._id,
+				order: sectionData.order || index + 1,
 			});
-		}
 
-		if (audio.base64) {
-			const uploadedAudio = await saveAndDeleteAudio(
-				null,
-				audio.base64,
-				"audios"
-			);
-			newLevel.push({
-				type: "audio",
-				file: uploadedAudio,
-				points: audio.points,
-			});
-		}
+			if (sectionData.items && Array.isArray(sectionData.items)) {
+				const itemPromises = sectionData.items.map(async (itemData) => {
+					let fileUrl;
 
-		if (image.base64) {
-			const uploadedImage = await saveAndDeleteImage(null, image.base64);
-			newLevel.push({
-				type: "image",
-				file: uploadedImage,
-				points: image.points,
-			});
-		}
+					switch (itemData.type) {
+						case "video":
+							fileUrl = await saveAndDeleteVideo(
+								null,
+								itemData.fileBuffer,
+								"videos"
+							);
+							break;
+						case "audio":
+							fileUrl = await saveAndDeleteAudio(
+								null,
+								itemData.fileBuffer,
+								"audios"
+							);
+							break;
+						case "image":
+							fileUrl = await saveAndDeleteImage(
+								null,
+								itemData.fileBuffer,
+								"images"
+							);
+							break;
+						case "pdf":
+							fileUrl = await saveAndDeletePdfFS(
+								null,
+								itemData.fileBuffer,
+								"pdfs"
+							);
+							break;
+						case "text":
+							fileUrl = itemData.fileContent;
+							break;
+						default:
+							return next(new ApiError("Unsupported item type", 400));
+					}
 
-		if (pdf.base64) {
-			const uploadedPdf = await saveAndDeletePdfFS(null, pdf.base64, "pdfs");
-			newLevel.push({
-				type: "pdf",
-				file: uploadedPdf,
-				points: pdf.points,
-			});
-		}
+					const newItem = await Item.create({
+						...itemData,
+						file: fileUrl,
+						section: newSection._id,
+					});
 
-		if (text.text) {
-			newLevel.push({
-				type: "text",
-				file: text.text,
-				points: text.points,
-			});
-		}
+					return newItem;
+				});
 
-		const levelField = `level${level}`;
-		const updatedChapter = await Chapter.findByIdAndUpdate(
-			chapterId,
-			{
-				$push: { [levelField]: { $each: newLevel } },
-			},
-			{ new: true }
-		);
+				const createdItems = await Promise.all(itemPromises);
+				newSection.items = createdItems.map((item) => item._id);
+			}
 
-		if (!updatedChapter) {
-			return next(new ApiError("Chapter not found", 404));
-		}
+			if (sectionData.quizes && Array.isArray(sectionData.quizes)) {
+				// TODO handle create quizes here later
+				newSection.quizes = sectionData.quizes;
+			}
 
-		return res.status(201).json({
+			await newSection.save();
+			return newSection;
+		});
+
+		const createdSections = await Promise.all(sectionPromises);
+
+		level.sections = createdSections.map((section) => section._id);
+		await level.save();
+
+		res.status(201).json({
 			status: "success",
-			result: updatedChapter,
+			result: level,
 			success: true,
-			message: `Level ${level} created successfully`,
+			message: "new level created successfully",
 		});
 	} catch (error) {
-		return next(new ApiError(`Something went wrong: ${error.message}`, 500));
+		return next(new ApiError("Something went wrong: " + error, 500));
 	}
 };
+
+// exports.addLevelToChapter = async (req, res, next) => {
+// 	const { chapterId } = req.params;
+// 	const { level, video, audio, image, pdf, text } = req.body;
+
+// 	try {
+// 		const newLevel = [];
+
+// 		if (video.base64) {
+// 			const uploadedVideo = await saveAndDeleteVideo(
+// 				null,
+// 				video.base64,
+// 				"videos"
+// 			);
+// 			newLevel.push({
+// 				type: "video",
+// 				file: uploadedVideo,
+// 				points: video.points,
+// 			});
+// 		}
+
+// 		if (audio.base64) {
+// 			const uploadedAudio = await saveAndDeleteAudio(
+// 				null,
+// 				audio.base64,
+// 				"audios"
+// 			);
+// 			newLevel.push({
+// 				type: "audio",
+// 				file: uploadedAudio,
+// 				points: audio.points,
+// 			});
+// 		}
+
+// 		if (image.base64) {
+// 			const uploadedImage = await saveAndDeleteImage(null, image.base64);
+// 			newLevel.push({
+// 				type: "image",
+// 				file: uploadedImage,
+// 				points: image.points,
+// 			});
+// 		}
+
+// 		if (pdf.base64) {
+// 			const uploadedPdf = await saveAndDeletePdfFS(null, pdf.base64, "pdfs");
+// 			newLevel.push({
+// 				type: "pdf",
+// 				file: uploadedPdf,
+// 				points: pdf.points,
+// 			});
+// 		}
+
+// 		if (text.text) {
+// 			newLevel.push({
+// 				type: "text",
+// 				file: text.text,
+// 				points: text.points,
+// 			});
+// 		}
+
+// 		const levelField = `level${level}`;
+// 		const updatedChapter = await Chapter.findByIdAndUpdate(
+// 			chapterId,
+// 			{
+// 				$push: { [levelField]: { $each: newLevel } },
+// 			},
+// 			{ new: true }
+// 		);
+
+// 		if (!updatedChapter) {
+// 			return next(new ApiError("Chapter not found", 404));
+// 		}
+
+// 		return res.status(201).json({
+// 			status: "success",
+// 			result: updatedChapter,
+// 			success: true,
+// 			message: `Level ${level} created successfully`,
+// 		});
+// 	} catch (error) {
+// 		return next(new ApiError(`Something went wrong: ${error.message}`, 500));
+// 	}
+// };
 
 exports.createQuizLevel = async (req, res, next) => {
 	const { title, chapter, questions, totalScore, passedScore } = req.body;
