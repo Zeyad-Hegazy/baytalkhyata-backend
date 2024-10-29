@@ -24,6 +24,11 @@ const {
 	completeLevel,
 	submitAnswer,
 	finishQuiz,
+	///////////
+	getChapters,
+	getChapterLevels,
+	getLevelSections,
+	getSectionItem,
 } = require("../controllers/chapterController");
 
 const { pagination } = require("../middlewares/pagination");
@@ -41,6 +46,13 @@ router.patch("/product/redeem/:productId", redeemProduct);
 router.get("/product", pagination, getProducts);
 router.get("/product/:productId", getProduct);
 
+// new diploma queries
+router.get("/chapter/:diplomaId", getChapters);
+router.get("/chapter/level/:chapterId", getChapterLevels);
+router.get("/chapter/level/section/:levelId", getLevelSections);
+router.get("/chapter/level/section/item/:itemId", getSectionItem);
+
+// old diploma queries
 router.get("/diploma/chapter/:chapterId/levels/:levelType", getChapterLevel);
 
 router.get("/diploma/all", getStudentAllDiplomas);
@@ -55,6 +67,8 @@ router.patch(
 );
 router.patch("/diploma/chapter/quiz/:quizId/answer/:answerId", submitAnswer);
 router.patch("/diploma/:diplomaId/chapter/:chapterId/quiz/:quizId", finishQuiz);
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 router.get("/FQA", getQuestions);
 

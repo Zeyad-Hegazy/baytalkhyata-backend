@@ -286,6 +286,144 @@ exports.createQuizLevel = async (req, res, next) => {
 
 // Student Mobile
 
+// NEW
+exports.getChapters = async (req, res, next) => {
+	try {
+		const { diplomaId } = req.params;
+
+		const diploma = await Diploma.findById(diplomaId)
+			.select("title description chapters")
+			.populate({
+				path: "chapters",
+				select: "title",
+			});
+
+		if (!diploma) {
+			return res.status(404).json({ message: "Diploma not found" });
+		}
+
+		res.status(200).json({
+			status: "success",
+			result: diploma,
+			success: true,
+			message: "success",
+		});
+	} catch (error) {
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+exports.getChapterLevels = async (req, res, next) => {
+	try {
+		const { chapterId } = req.params;
+
+		const chapter = await Chapter.findById(chapterId)
+			.select("title levels")
+			.populate({
+				path: "levels",
+				select: "title order",
+				options: { sort: { order: 1 } },
+			});
+
+		if (!chapter) {
+			return res.status(404).json({ message: "Chapter not found" });
+		}
+
+		res.status(200).json({
+			status: "success",
+			result: chapter,
+			success: true,
+			message: "success",
+		});
+	} catch (error) {
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+exports.getLevelSections = async (req, res, next) => {
+	try {
+		const { levelId } = req.params;
+
+		const level = await Level.findById(levelId)
+			.select("title order sections")
+			.populate({
+				path: "sections",
+				select: "title order items",
+				options: { sort: { order: 1 } },
+				populate: {
+					path: "items",
+					select: "title order type points",
+					options: { sort: { order: 1 } },
+				},
+			});
+
+		if (!level) {
+			return res.status(404).json({ message: "Level not found" });
+		}
+
+		res.status(200).json({
+			status: "success",
+			result: level,
+			success: true,
+			message: "success",
+		});
+	} catch (error) {
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+exports.getSectionItem = async (req, res, next) => {
+	try {
+		const { itemId } = req.params;
+
+		const item = await Item.findById(itemId).select(
+			"title description type file size points"
+		);
+
+		if (!item) {
+			return res.status(404).json({ message: "Item not found" });
+		}
+
+		const fileExtension = item.file.split(".").pop().toLowerCase();
+		let folder;
+
+		if (["jpg", "jpeg", "png", "gif"].includes(fileExtension)) {
+			folder = "images";
+		} else if (["pdf"].includes(fileExtension)) {
+			folder = "pdfs";
+		} else if (["mp3", "wav", "ogg"].includes(fileExtension)) {
+			folder = "audios";
+		} else if (["mp4", "avi", "mov", "mkv"].includes(fileExtension)) {
+			folder = "videos";
+		} else {
+			return item;
+		}
+		let fileUrl;
+		if (folder) {
+			fileUrl = `${res.locals.baseUrl}/uploads/${folder}/${item.file}`;
+		} else {
+			fileUrl = item.file;
+		}
+
+		res.status(200).json({
+			status: "success",
+			result: {
+				title: item.title,
+				description: item.description,
+				type: item.type,
+				file: fileUrl,
+				size: item.size,
+				points: item.points,
+			},
+			success: true,
+			message: "success",
+		});
+	} catch (error) {
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+// OLD
 exports.getChapterLevel = async (req, res) => {
 	try {
 		const { chapterId, levelType } = req.params;
