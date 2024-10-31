@@ -7,6 +7,7 @@ const {
 	redeemProduct,
 	getProducts,
 	getProduct,
+	getStudentProducts,
 } = require("../controllers/productController");
 
 const {
@@ -44,6 +45,7 @@ router.get("/profile", getAuthenticatedUser);
 
 router.patch("/product/redeem/:productId", redeemProduct);
 router.get("/product", pagination, getProducts);
+router.get("/product/owned", getStudentProducts);
 router.get("/product/:productId", getProduct);
 
 // new diploma queries

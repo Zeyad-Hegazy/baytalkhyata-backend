@@ -247,3 +247,38 @@ exports.giftProduct = async (req, res, next) => {
 		next(new ApiError("somthing went wrong " + error, 500));
 	}
 };
+
+exports.getStudentProducts = async (req, res, next) => {
+	try {
+		const studentId = req.user._id;
+
+		const student = await Student.findById(studentId)
+			.select("ownedProdcuts")
+			.populate({ path: "ownedProdcuts", select: "title points image" });
+
+		if (student.ownedProdcuts.length === 0) {
+			return res.status(200).json({
+				status: "success",
+				result: [],
+				success: true,
+				message: "No Products Availabile",
+			});
+		}
+
+		const formattedProducts = student.ownedProdcuts.map((product) => ({
+			_id: product._id,
+			title: product.title,
+			points: product.points,
+			image: `${res.locals.baseUrl}/uploads/images/${product.image}`,
+		}));
+
+		return res.status(200).json({
+			status: "success",
+			result: formattedProducts,
+			success: true,
+			message: "success",
+		});
+	} catch (error) {
+		return next(new ApiError("Somthing went wrong : " + error, 500));
+	}
+};
