@@ -48,9 +48,13 @@ exports.getProducts = async (req, res, next) => {
 			image: `${res.locals.baseUrl}/uploads/images/${product.image}`,
 		}));
 
+		const productsQuery = req.studentPoints
+			? { points: req.studentPoints, products: formattedProducts }
+			: formattedProducts;
+
 		return res.status(200).json({
 			status: "success",
-			result: formattedProducts,
+			result: productsQuery,
 			success: true,
 			message: "success",
 		});

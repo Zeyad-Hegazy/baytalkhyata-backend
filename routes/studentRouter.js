@@ -41,10 +41,12 @@ const {
 	downloadPdfFromCloudinary,
 } = require("../controllers/libraryController");
 
+const getPoints = require("../middlewares/getPoints");
+
 router.get("/profile", getAuthenticatedUser);
 
 router.patch("/product/redeem/:productId", redeemProduct);
-router.get("/product", pagination, getProducts);
+router.get("/product", getPoints, pagination, getProducts);
 router.get("/product/owned", getStudentProducts);
 router.get("/product/:productId", getProduct);
 
