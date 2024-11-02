@@ -39,6 +39,7 @@ const {
 const { pagination } = require("../middlewares/pagination");
 
 const { getQuestions } = require("../controllers/FQAController");
+
 const {
 	getItems,
 	getPdfFromCloudinary,
@@ -46,6 +47,11 @@ const {
 } = require("../controllers/libraryController");
 
 const getPoints = require("../middlewares/getPoints");
+
+const {
+	getBankQuestions,
+	submitBankQuestionAnswer,
+} = require("../controllers/BankQuestionController");
 
 router.route("/profile").get(getAuthenticatedUser).patch(updateProfile);
 
@@ -84,5 +90,10 @@ router.get("/FQA", getQuestions);
 router.route("/library").get(getItems);
 router.route("/library/:itemId").get(getPdfFromCloudinary);
 router.route("/library/download/:itemId").get(downloadPdfFromCloudinary);
+
+router
+	.route("/bank-questions")
+	.get(getBankQuestions)
+	.patch(submitBankQuestionAnswer);
 
 module.exports = router;

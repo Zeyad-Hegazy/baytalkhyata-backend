@@ -59,6 +59,8 @@ const {
 	getQuestionAnswers,
 } = require("../controllers/FQAController");
 
+const { createBankQuestion } = require("../controllers/BankQuestionController");
+
 router.delete("/student/meny", deleteMenyStudents);
 router.patch("/student/assign/:userId", assignDiploma);
 router.route("/student").post(createStudent).get(pagination, getStudents);
@@ -98,5 +100,7 @@ router.route("/category/item/:categoryId").get(getCategoryItems);
 
 router.route("/FQA").post(createFQA);
 router.route("/FQA/:fqaId").patch(updateFQA).get(getQuestionAnswers);
+
+router.post("/bank-questions", createBankQuestion);
 
 module.exports = router;
