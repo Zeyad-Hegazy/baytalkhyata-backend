@@ -39,6 +39,7 @@ const quizesTakenSchema = new mongoose.Schema(
 
 const StudentSchema = new mongoose.Schema(
 	{
+		image: { type: String, default: "user-profile.png" },
 		fullName: { type: String, required: true },
 		email: { type: String, required: true, unique: true },
 		phone: { type: String, required: true, unique: true },

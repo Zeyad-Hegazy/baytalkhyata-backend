@@ -5,6 +5,8 @@ const ApiError = require("../util/ApiError");
 const bcryptjs = require("bcryptjs");
 const formatDate = require("../util/formatDate");
 
+const { saveAndDeleteImage } = require("../util/imageUtil");
+
 exports.createStudent = async (req, res, next) => {
 	const { fullName, password, phone, email } = req.body;
 
@@ -93,7 +95,9 @@ exports.getAuthenticatedUser = async (req, res, next) => {
 	try {
 		const userId = req.user._id;
 
-		const user = await Student.findById(userId).select("fullName phone email");
+		const user = await Student.findById(userId).select(
+			"fullName phone email image"
+		);
 
 		if (!userId) {
 			return next(new ApiError("student not found by this id " + userId, 404));
@@ -101,7 +105,13 @@ exports.getAuthenticatedUser = async (req, res, next) => {
 
 		return res.status(200).json({
 			status: "success",
-			result: user,
+			result: {
+				_id: user._id,
+				fullName: user.fullName,
+				phone: user.phone,
+				email: user.email,
+				image: `${res.locals.baseUrl}/uploads/images/${user.image}`,
+			},
 			success: true,
 			message: "success",
 		});
@@ -384,10 +394,10 @@ exports.assignDiploma = async (req, res, next) => {
 exports.updateProfile = async (req, res, next) => {
 	try {
 		const studentId = req.user._id;
-		const { fullName, phone, email, password } = req.body;
+		const { fullName, phone, email, image, password } = req.body;
 
 		const student = await Student.findById(studentId).select(
-			"fullName phone email password"
+			"fullName phone email password image"
 		);
 
 		if (!student) {
@@ -407,6 +417,14 @@ exports.updateProfile = async (req, res, next) => {
 
 		const newPassword = await bcryptjs.hash(password, 12);
 
+		if (student.image === "user-profile.png") {
+			const newImage = await saveAndDeleteImage(null, image, true);
+			student.image = newImage;
+		} else {
+			const newImage = await saveAndDeleteImage(student.image, image, true);
+			student.image = newImage;
+		}
+
 		student.fullName = fullName || student.fullName;
 		student.email = email || student.email;
 		student.phone = phone || student.phone;
@@ -421,6 +439,7 @@ exports.updateProfile = async (req, res, next) => {
 				fullName: student.fullName,
 				email: student.email,
 				phone: student.phone,
+				image: `${res.locals.baseUrl}/uploads/images/${student.image}`,
 			},
 			success: true,
 			message: "Profile updated successfully",
