@@ -408,6 +408,7 @@ exports.getSectionItem = async (req, res, next) => {
 		res.status(200).json({
 			status: "success",
 			result: {
+				_id: item._id,
 				title: item.title,
 				description: item.description,
 				type: item.type,
@@ -417,6 +418,75 @@ exports.getSectionItem = async (req, res, next) => {
 			},
 			success: true,
 			message: "success",
+		});
+	} catch (error) {
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+exports.completeItem = async (req, res, next) => {
+	try {
+		const { itemId } = req.params;
+		const studentId = req.user._id;
+
+		const student = await Student.findById(studentId);
+		const item = await Item.findById(itemId);
+		const section = await Section.findById(item.section);
+		const level = await Level.findById(section.level);
+		const chapter = await Chapter.findById(level.chapter);
+
+		const diploma = student?.enrolledDiplomas.find(
+			(enrolledDiploma) =>
+				enrolledDiploma.diploma.toString() === chapter.diploma.toString()
+		);
+
+		if (!diploma) {
+			return res.status(404).json({ message: "Diploma not found" });
+		}
+
+		let completedLevel = diploma.completedLevels.find(
+			(cl) => cl.level.toString() === level._id.toString()
+		);
+
+		if (completedLevel) {
+			let completedSection = completedLevel.completedSections.find(
+				(cs) => cs.section.toString() === section._id.toString()
+			);
+
+			if (completedSection) {
+				if (!completedSection.completedItems.includes(item._id)) {
+					completedSection.completedItems.push(item._id);
+					diploma.totalPointsEarned += item.points || 0;
+				}
+			} else {
+				completedLevel.completedSections.push({
+					section: section._id,
+					completedItems: [item._id],
+				});
+				diploma.totalPointsEarned += item.points || 0;
+			}
+		} else {
+			diploma.completedLevels.push({
+				level: level._id,
+				completedSections: [
+					{
+						section: section._id,
+						completedItems: [item._id],
+					},
+				],
+			});
+			diploma.totalPointsEarned += item.points || 0;
+		}
+
+		await student.save();
+
+		res.status(200).json({
+			status: "success",
+			result: {
+				diploma,
+			},
+			success: true,
+			message: "Item marked as complete, points updated",
 		});
 	} catch (error) {
 		res.status(500).json({ message: "Server error", error: error.message });

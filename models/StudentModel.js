@@ -3,20 +3,19 @@ const mongoose = require("mongoose");
 const enrolledDiplomaSchema = new mongoose.Schema(
 	{
 		diploma: { type: mongoose.Schema.ObjectId, ref: "Diploma", required: true },
-		progress: { type: Number, default: 0 },
 		completedLevels: [
 			{
-				chapterId: {
+				level: {
 					type: mongoose.Schema.ObjectId,
-					ref: "Chapter",
-					required: true,
+					ref: "level",
 				},
-				levelIds: {
-					levelOne: { type: mongoose.Schema.ObjectId },
-					levelTwo: { type: mongoose.Schema.ObjectId },
-					levelThree: { type: mongoose.Schema.ObjectId },
-					levelFour: { type: mongoose.Schema.ObjectId },
-				},
+
+				completedSections: [
+					{
+						section: { type: mongoose.Schema.ObjectId, ref: "Section" },
+						completedItems: [{ type: mongoose.Schema.ObjectId, ref: "Item" }],
+					},
+				],
 			},
 		],
 		completedChapters: [{ type: mongoose.Schema.ObjectId, ref: "Chapter" }],

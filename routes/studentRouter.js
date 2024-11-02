@@ -30,6 +30,7 @@ const {
 	getChapterLevels,
 	getLevelSections,
 	getSectionItem,
+	completeItem,
 } = require("../controllers/chapterController");
 
 const { pagination } = require("../middlewares/pagination");
@@ -55,6 +56,7 @@ router.get("/chapter/:diplomaId", getChapters);
 router.get("/chapter/level/:chapterId", getChapterLevels);
 router.get("/chapter/level/section/:levelId", getLevelSections);
 router.get("/chapter/level/section/item/:itemId", getSectionItem);
+router.patch("/complete/item/:itemId", completeItem);
 
 // old diploma queries
 router.get("/diploma/chapter/:chapterId/levels/:levelType", getChapterLevel);
