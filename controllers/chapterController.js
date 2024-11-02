@@ -125,11 +125,6 @@ exports.addLevelToChapter = async (req, res, next) => {
 				newSection.items = createdItems.map((item) => item._id);
 			}
 
-			if (sectionData.quizes && Array.isArray(sectionData.quizes)) {
-				// TODO handle create quizes here later
-				newSection.quizes = sectionData.quizes;
-			}
-
 			await newSection.save();
 			return newSection;
 		});
@@ -269,7 +264,58 @@ exports.createQuizLevel = async (req, res, next) => {
 
 		await Chapter.findByIdAndUpdate(
 			chapter,
-			{ levelFive: newQuiz._id },
+			{ finalQuiz: newQuiz._id },
+			{ new: true }
+		);
+
+		return res.status(201).json({
+			status: "success",
+			result: newQuiz,
+			success: true,
+			message: "Quiz created successfully",
+		});
+	} catch (error) {
+		return next(new ApiError("Something went wrong: " + error, 500));
+	}
+};
+
+exports.addQuizToSection = async (req, res, next) => {
+	const { title, section, questions, totalScore, passedScore } = req.body;
+
+	try {
+		const questionPromises = questions.map(async (question) => {
+			const answerPromises = question.answers.map(async (answer) => {
+				const newAnswer = await Answer.create({
+					text: answer.text,
+					isCorrect: answer.isCorrect,
+				});
+				return newAnswer._id;
+			});
+
+			const answerIds = await Promise.all(answerPromises);
+
+			const newQuestion = await Question.create({
+				text: question.text,
+				answers: answerIds,
+				score: question.score,
+			});
+
+			return newQuestion._id;
+		});
+
+		const questionIds = await Promise.all(questionPromises);
+
+		const newQuiz = await Quiz.create({
+			title,
+			section,
+			questions: questionIds,
+			totalScore,
+			passedScore,
+		});
+
+		await Section.findByIdAndUpdate(
+			section,
+			{ $push: { quizes: newQuiz._id } },
 			{ new: true }
 		);
 
@@ -348,22 +394,54 @@ exports.getLevelSections = async (req, res, next) => {
 			.select("title order sections")
 			.populate({
 				path: "sections",
-				select: "title order items",
+				select: "title order items quizes",
 				options: { sort: { order: 1 } },
-				populate: {
-					path: "items",
-					select: "title order type points",
-					options: { sort: { order: 1 } },
-				},
+				populate: [
+					{
+						path: "items",
+						select: "title order type points",
+						options: { sort: { order: 1 } },
+					},
+					{
+						path: "quizes",
+						select: "title",
+					},
+				],
 			});
 
 		if (!level) {
 			return res.status(404).json({ message: "Level not found" });
 		}
 
+		const mergedSections = level.sections.map((section) => {
+			const mergedItems = [
+				...section.items.map((item) => ({
+					...item.toObject(),
+					itemType: "media",
+				})),
+				...section.quizes.map((quiz) => ({
+					...quiz.toObject(),
+					itemType: "quiz",
+				})),
+			];
+
+			mergedItems.sort((a, b) => a.order - b.order);
+
+			return {
+				...section.toObject(),
+				items: mergedItems,
+				quizes: undefined,
+			};
+		});
+
+		const result = {
+			...level.toObject(),
+			sections: mergedSections,
+		};
+
 		res.status(200).json({
 			status: "success",
-			result: level,
+			result,
 			success: true,
 			message: "success",
 		});
@@ -421,6 +499,144 @@ exports.getSectionItem = async (req, res, next) => {
 		});
 	} catch (error) {
 		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+exports.getSectionQuiz = async (req, res, next) => {
+	try {
+		const { quizId } = req.params;
+
+		const quiz = await Quiz.findById(quizId)
+			.select("title questions totalScore")
+			.populate({
+				path: "questions",
+				model: "Question",
+				select: "text score answers",
+				populate: {
+					path: "answers",
+					model: "Answer",
+					select: "text",
+				},
+			});
+
+		if (!quiz) {
+			return res.status(404).json({ message: "Quiz not found" });
+		}
+
+		res.status(200).json({
+			status: "success",
+			result: quiz,
+			success: true,
+			message: "success",
+		});
+	} catch (error) {
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+exports.submitAnswer = async (req, res, next) => {
+	try {
+		const { answerId, quizId } = req.body;
+		const studentId = req.user._id;
+
+		const selectedAnswer = await Answer.findById(answerId);
+
+		if (!selectedAnswer) {
+			return res.status(404).json({ message: "Answer not found" });
+		}
+
+		const student = await Student.findById(studentId).populate({
+			path: "quizesTaken",
+		});
+
+		const question = await Question.findOne({ answers: { $in: answerId } });
+
+		if (!student) {
+			return res.status(404).json({ message: "Student not found" });
+		}
+
+		let quizTaken = student.quizesTaken.find(
+			(quiz) => quiz.quiz.toString() === quizId
+		);
+
+		if (!quizTaken) {
+			const isCorrectAnswer = selectedAnswer.isCorrect;
+			quizTaken = {
+				quiz: quizId,
+				correctAnswers: isCorrectAnswer ? 1 : 0,
+				submetedAnswers: [answerId],
+				score: isCorrectAnswer ? question.score : 0,
+				passed: false,
+			};
+			student.quizesTaken.push(quizTaken);
+		} else {
+			if (selectedAnswer.isCorrect) {
+				quizTaken.correctAnswers += 1;
+				quizTaken.score += question.score;
+				quizTaken.submetedAnswers.push(answerId);
+			}
+		}
+
+		await student.save();
+
+		return res.status(200).json({
+			message: "Answer submitted successfully",
+			isCorrect: selectedAnswer.isCorrect,
+			totalCorrectAnswers: quizTaken.correctAnswers,
+			totalPoints: student.points,
+		});
+	} catch (error) {
+		console.error(error);
+		return res
+			.status(500)
+			.json({ message: "An error occurred while submitting the answer" });
+	}
+};
+
+exports.finishSectionQuiz = async (req, res, next) => {
+	try {
+		const { quizId } = req.params;
+		const studentId = req.user._id;
+
+		const student = await Student.findById(studentId).populate([
+			{ path: "quizesTaken.quiz" },
+		]);
+
+		if (!student) {
+			return res.status(404).json({ message: "Student not found" });
+		}
+
+		const quiz = await Quiz.findById(quizId).select("passedScore totalScore");
+		if (!quiz) {
+			return res.status(404).json({ message: "Quiz not found" });
+		}
+
+		let quizTaken = student.quizesTaken.find(
+			(quizEntry) => quizEntry.quiz._id.toString() === quizId
+		);
+
+		if (!quizTaken) {
+			return res.status(404).json({ message: "Quiz not taken" });
+		}
+
+		if (quizTaken.score >= quiz.passedScore) {
+			quizTaken.passed = true;
+		} else {
+			return res.status(400).json({ message: "Quiz not passed" });
+		}
+
+		await student.save();
+
+		return res.status(200).json({
+			message: "Quiz finished successfully",
+			passed: quizTaken.passed,
+			totalCorrectAnswers: quizTaken.correctAnswers,
+		});
+	} catch (error) {
+		console.error(error);
+		return res
+			.status(500)
+			.json({ message: "Server error", error: error.message });
 	}
 };
 
@@ -493,6 +709,101 @@ exports.completeItem = async (req, res, next) => {
 	}
 };
 
+exports.getQuizLevel = async (req, res, next) => {
+	try {
+		const { chapterId } = req.params;
+
+		const chapter = await Chapter.findById(chapterId).populate({
+			path: "finalQuiz",
+			model: "Quiz",
+			select: "title chapter questions totalScore",
+			populate: {
+				path: "questions",
+				model: "Question",
+				select: "text score answers",
+				populate: {
+					path: "answers",
+					model: "Answer",
+					select: "text",
+				},
+			},
+		});
+
+		if (!chapter) {
+			return res.status(404).json({ message: "Chapter not found" });
+		}
+
+		res.status(200).json({
+			status: "success",
+			result: chapter.finalQuiz,
+			success: true,
+			message: "success",
+		});
+	} catch (error) {
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+};
+
+exports.finishFinalQuiz = async (req, res, next) => {
+	try {
+		const { quizId } = req.params;
+		const studentId = req.user._id;
+
+		const quiz = await Quiz.findById(quizId)
+			.select("passedScore totalScore chapter")
+			.populate({ path: "chapter", select: "diploma" });
+		if (!quiz) {
+			return res.status(404).json({ message: "Quiz not found" });
+		}
+
+		const student = await Student.findById(studentId).populate([
+			{ path: "quizesTaken.quiz" },
+			{ path: "enrolledDiplomas.diploma" },
+		]);
+
+		if (!student) {
+			return res.status(404).json({ message: "Student not found" });
+		}
+
+		const enrolledDiploma = student.enrolledDiplomas.find(
+			(diploma) =>
+				diploma.diploma._id.toString() === quiz.chapter.diploma.toString()
+		);
+
+		if (!enrolledDiploma) {
+			return res.status(404).json({ message: "Enrolled diploma not found" });
+		}
+
+		let quizTaken = student.quizesTaken.find(
+			(quizEntry) => quizEntry.quiz._id.toString() === quizId
+		);
+
+		if (!quizTaken) {
+			return res.status(404).json({ message: "Quiz not taken" });
+		}
+
+		if (quizTaken.score >= quiz.passedScore) {
+			enrolledDiploma.completedChapters.push(quiz.chapter._id);
+			quizTaken.passed = true;
+		} else {
+			return res.status(400).json({ message: "Quiz not passed" });
+		}
+
+		await student.save();
+
+		return res.status(200).json({
+			message: "Quiz finished successfully",
+			passed: quizTaken.passed,
+			totalCorrectAnswers: quizTaken.correctAnswers,
+		});
+	} catch (error) {
+		console.error(error);
+		return res
+			.status(500)
+			.json({ message: "Server error", error: error.message });
+	}
+};
+
 // OLD
 exports.getChapterLevel = async (req, res) => {
 	try {
@@ -550,41 +861,6 @@ exports.getChapterLevel = async (req, res) => {
 		res.status(200).json({
 			status: "success",
 			result: updatedLevelArray,
-			success: true,
-			message: "success",
-		});
-	} catch (error) {
-		res.status(500).json({ message: "Server error", error: error.message });
-	}
-};
-
-exports.getQuizLevel = async (req, res, next) => {
-	try {
-		const { chapterId } = req.params;
-
-		const chapter = await Chapter.findById(chapterId).populate({
-			path: "levelFive",
-			model: "Quiz",
-			select: "title chapter questions totalScore",
-			populate: {
-				path: "questions",
-				model: "Question",
-				select: "text score answers",
-				populate: {
-					path: "answers",
-					model: "Answer",
-					select: "text",
-				},
-			},
-		});
-
-		if (!chapter) {
-			return res.status(404).json({ message: "Chapter not found" });
-		}
-
-		res.status(200).json({
-			status: "success",
-			result: chapter.levelFive,
 			success: true,
 			message: "success",
 		});
@@ -659,121 +935,6 @@ exports.completeLevel = async (req, res, next) => {
 		return res
 			.status(500)
 			.json({ message: "An error occurred while completing the level" });
-	}
-};
-
-exports.submitAnswer = async (req, res, next) => {
-	try {
-		const { answerId, quizId } = req.params;
-		const studentId = req.user._id;
-
-		const selectedAnswer = await Answer.findById(answerId);
-		if (!selectedAnswer) {
-			return res.status(404).json({ message: "Answer not found" });
-		}
-
-		const student = await Student.findById(studentId).populate({
-			path: "quizesTaken",
-		});
-
-		const question = await Question.findOne({ answers: { $in: answerId } });
-
-		if (!student) {
-			return res.status(404).json({ message: "Student not found" });
-		}
-
-		let quizTaken = student.quizesTaken.find(
-			(quiz) => quiz.quiz.toString() === quizId
-		);
-
-		if (!quizTaken) {
-			const isCorrectAnswer = selectedAnswer.isCorrect;
-			quizTaken = {
-				quiz: quizId,
-				correctAnswers: isCorrectAnswer ? 1 : 0,
-				submetedAnswers: [answerId],
-				score: isCorrectAnswer ? question.score : 0,
-				passed: false,
-			};
-			student.quizesTaken.push(quizTaken);
-		} else {
-			if (selectedAnswer.isCorrect) {
-				quizTaken.correctAnswers += 1;
-				quizTaken.score += question.score;
-				quizTaken.submetedAnswers.push(answerId);
-			}
-		}
-
-		await student.save();
-
-		return res.status(200).json({
-			message: "Answer submitted successfully",
-			isCorrect: selectedAnswer.isCorrect,
-			totalCorrectAnswers: quizTaken.correctAnswers,
-			totalPoints: student.points,
-		});
-	} catch (error) {
-		console.error(error);
-		return res
-			.status(500)
-			.json({ message: "An error occurred while submitting the answer" });
-	}
-};
-
-exports.finishQuiz = async (req, res, next) => {
-	try {
-		const { quizId, chapterId, diplomaId } = req.params;
-		const studentId = req.user._id;
-
-		const student = await Student.findById(studentId).populate([
-			{ path: "quizesTaken.quiz" },
-			{ path: "enrolledDiplomas.diploma" },
-		]);
-
-		if (!student) {
-			return res.status(404).json({ message: "Student not found" });
-		}
-
-		const enrolledDiploma = student.enrolledDiplomas.find(
-			(diploma) => diploma.diploma._id.toString() === diplomaId
-		);
-
-		if (!enrolledDiploma) {
-			return res.status(404).json({ message: "Enrolled diploma not found" });
-		}
-
-		const quiz = await Quiz.findById(quizId).select("passedScore totalScore");
-		if (!quiz) {
-			return res.status(404).json({ message: "Quiz not found" });
-		}
-
-		let quizTaken = student.quizesTaken.find(
-			(quizEntry) => quizEntry.quiz._id.toString() === quizId
-		);
-
-		if (!quizTaken) {
-			return res.status(404).json({ message: "Quiz not taken" });
-		}
-
-		if (quizTaken.score >= quiz.passedScore) {
-			enrolledDiploma.completedChapters.push(chapterId);
-			quizTaken.passed = true;
-		} else {
-			return res.status(400).json({ message: "Quiz not passed" });
-		}
-
-		await student.save();
-
-		return res.status(200).json({
-			message: "Quiz finished successfully",
-			passed: quizTaken.passed,
-			totalCorrectAnswers: quizTaken.correctAnswers,
-		});
-	} catch (error) {
-		console.error(error);
-		return res
-			.status(500)
-			.json({ message: "Server error", error: error.message });
 	}
 };
 

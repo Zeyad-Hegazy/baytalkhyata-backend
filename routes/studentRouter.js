@@ -27,13 +27,15 @@ const {
 	getQuizLevel,
 	completeLevel,
 	submitAnswer,
-	finishQuiz,
 	///////////
 	getChapters,
 	getChapterLevels,
 	getLevelSections,
 	getSectionItem,
 	completeItem,
+	getSectionQuiz,
+	finishSectionQuiz,
+	finishFinalQuiz,
 } = require("../controllers/chapterController");
 
 const { pagination } = require("../middlewares/pagination");
@@ -60,29 +62,31 @@ router.get("/product", getPoints, pagination, getProducts);
 router.get("/product/owned", getStudentProducts);
 router.get("/product/:productId", getProduct);
 
-// new diploma queries
-router.get("/chapter/:diplomaId", getChapters);
-router.get("/chapter/level/:chapterId", getChapterLevels);
-router.get("/chapter/level/section/:levelId", getLevelSections);
-router.get("/chapter/level/section/item/:itemId", getSectionItem);
-router.patch("/complete/item/:itemId", completeItem);
-
-// old diploma queries
-router.get("/diploma/chapter/:chapterId/levels/:levelType", getChapterLevel);
-
 router.get("/diploma/all", getStudentAllDiplomas);
 router.get("/diploma", getStudentDiplomas);
 router.get("/diploma/bookmark", getBookMarkedDiplomas);
 router.patch("/diploma/bookmark/:diplomaId", toggleDiplomaBookmark);
 router.get("/diploma/chapter/:diplomaId", getDiplomaChapters);
 router.get("/diploma/chapter/quiz/:chapterId", getQuizLevel);
+
+// new diploma queries
+router.get("/chapter/:diplomaId", getChapters);
+router.get("/chapter/level/:chapterId", getChapterLevels);
+router.get("/chapter/level/section/:levelId", getLevelSections);
+router.get("/chapter/level/section/item/:itemId", getSectionItem);
+router.patch("/chapter/quiz/:quizId", finishFinalQuiz);
+
+router.get("/section/quiz/:quizId", getSectionQuiz);
+router.patch("/complete/item/:itemId", completeItem);
+router.patch("/quiz/submit", submitAnswer);
+router.patch("/quiz/finish/:quizId", finishSectionQuiz);
+
+// old diploma queries
+router.get("/diploma/chapter/:chapterId/levels/:levelType", getChapterLevel);
 router.patch(
 	"/diploma/:diplomaId/chapter/:chapterId/:levelType",
 	completeLevel
 );
-router.patch("/diploma/chapter/quiz/:quizId/answer/:answerId", submitAnswer);
-router.patch("/diploma/:diplomaId/chapter/:chapterId/quiz/:quizId", finishQuiz);
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 router.get("/FQA", getQuestions);
