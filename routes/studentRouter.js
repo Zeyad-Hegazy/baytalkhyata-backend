@@ -2,7 +2,10 @@ const express = require("express");
 
 const router = express.Router();
 
-const { getAuthenticatedUser } = require("../controllers/studentController");
+const {
+	getAuthenticatedUser,
+	updateProfile,
+} = require("../controllers/studentController");
 const {
 	redeemProduct,
 	getProducts,
@@ -44,7 +47,7 @@ const {
 
 const getPoints = require("../middlewares/getPoints");
 
-router.get("/profile", getAuthenticatedUser);
+router.route("/profile").get(getAuthenticatedUser).patch(updateProfile);
 
 router.patch("/product/redeem/:productId", redeemProduct);
 router.get("/product", getPoints, pagination, getProducts);

@@ -93,7 +93,7 @@ exports.getAuthenticatedUser = async (req, res, next) => {
 	try {
 		const userId = req.user._id;
 
-		const user = await Student.findById(userId).select("-password -role");
+		const user = await Student.findById(userId).select("fullName phone email");
 
 		if (!userId) {
 			return next(new ApiError("student not found by this id " + userId, 404));
@@ -378,5 +378,58 @@ exports.assignDiploma = async (req, res, next) => {
 		});
 	} catch (error) {
 		next(new ApiError("Something went wrong: " + error.message, 500));
+	}
+};
+
+exports.updateProfile = async (req, res, next) => {
+	try {
+		const studentId = req.user._id;
+		const { fullName, phone, email, password } = req.body;
+
+		const student = await Student.findById(studentId).select(
+			"fullName phone email password"
+		);
+
+		if (!student) {
+			return res.status(404).json({ message: "Student not found" });
+		}
+
+		const isTheSamePassword = await bcryptjs.compare(
+			password,
+			student.password
+		);
+
+		if (isTheSamePassword) {
+			return res
+				.status(400)
+				.json({ message: "Cannot update to the same password" });
+		}
+
+		const newPassword = await bcryptjs.hash(password, 12);
+
+		student.fullName = fullName || student.fullName;
+		student.email = email || student.email;
+		student.phone = phone || student.phone;
+		student.password = newPassword || student.password;
+
+		await student.save();
+
+		res.status(200).json({
+			status: "success",
+			result: {
+				_id: student._id,
+				fullName: student.fullName,
+				email: student.email,
+				phone: student.phone,
+			},
+			success: true,
+			message: "Profile updated successfully",
+		});
+	} catch (error) {
+		console.error("Error updating profile:", error);
+		res
+			.status(500)
+			.json({ message: "An error occurred while updating the profile" });
+		next(error);
 	}
 };
