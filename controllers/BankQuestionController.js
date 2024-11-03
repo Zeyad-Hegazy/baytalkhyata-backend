@@ -40,7 +40,12 @@ exports.getBankQuestions = async (req, res, next) => {
 				select: "text",
 			});
 
-		res.status(200).json(questions);
+		return res.status(200).json({
+			status: "success",
+			result: questions,
+			success: true,
+			message: "success",
+		});
 	} catch (error) {
 		return next(new ApiError("Somthing went wrong : " + error, 500));
 	}
