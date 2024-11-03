@@ -17,12 +17,14 @@ exports.createMessage = async (req, res, next) => {
 };
 
 exports.getMessages = async (req, res, next) => {
-	const userId = req.user._id;
+	const { userId } = req.params;
 
 	try {
 		const messages = await Message.find({
 			$or: [{ reciver: userId }, { sender: userId }],
-		}).select("sender reciver text");
+		})
+			.select("sender reciver text createdAt")
+			.sort({ createdAt: 1 });
 
 		return res.status(200).json({
 			status: "success",

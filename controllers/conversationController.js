@@ -57,6 +57,14 @@ exports.getConversation = async (req, res) => {
 		const conversation = await Conversation.findOne({
 			memberIds: { $all: [firstUserId, secondUserId] },
 		});
+		if (!conversation) {
+			return res.status(404).json({
+				status: "success",
+				result: null,
+				success: true,
+				message: "Conversation not found",
+			});
+		}
 
 		return res.status(200).json({
 			status: "success",
