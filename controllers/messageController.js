@@ -22,7 +22,7 @@ exports.getMessages = async (req, res, next) => {
 	try {
 		const messages = await Message.find({
 			$or: [{ reciver: userId }, { sender: userId }],
-		});
+		}).select("sender reciver text");
 
 		return res.status(200).json({
 			status: "success",
