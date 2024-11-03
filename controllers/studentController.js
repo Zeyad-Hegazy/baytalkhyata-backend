@@ -96,7 +96,7 @@ exports.getAuthenticatedUser = async (req, res, next) => {
 		const userId = req.user._id;
 
 		const user = await Student.findById(userId).select(
-			"fullName phone email image"
+			"fullName phone email image points"
 		);
 
 		if (!userId) {
@@ -111,6 +111,7 @@ exports.getAuthenticatedUser = async (req, res, next) => {
 				phone: user.phone,
 				email: user.email,
 				image: `${res.locals.baseUrl}/uploads/images/${user.image}`,
+				points: student.points,
 			},
 			success: true,
 			message: "success",
@@ -397,7 +398,7 @@ exports.updateProfile = async (req, res, next) => {
 		const { fullName, phone, email, image, password } = req.body;
 
 		const student = await Student.findById(studentId).select(
-			"fullName phone email password image points"
+			"fullName phone email password image"
 		);
 
 		if (!student) {
@@ -442,7 +443,6 @@ exports.updateProfile = async (req, res, next) => {
 				email: student.email,
 				phone: student.phone,
 				image: `${res.locals.baseUrl}/uploads/images/${student.image}`,
-				points: student.points,
 			},
 			success: true,
 			message: "Profile updated successfully",
