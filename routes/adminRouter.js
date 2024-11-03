@@ -62,6 +62,8 @@ const {
 
 const { createBankQuestion } = require("../controllers/BankQuestionController");
 
+const { sendNotification } = require("../controllers/notificationController");
+
 router.delete("/student/meny", deleteMenyStudents);
 router.patch("/student/assign/:userId", assignDiploma);
 router.route("/student").post(createStudent).get(pagination, getStudents);
@@ -104,5 +106,9 @@ router.route("/FQA").post(createFQA);
 router.route("/FQA/:fqaId").patch(updateFQA).get(getQuestionAnswers);
 
 router.post("/bank-questions", createBankQuestion);
+
+router.post("/send-notification", (req, res) => {
+	sendNotification(req.app.get("io"))(req, res);
+});
 
 module.exports = router;
