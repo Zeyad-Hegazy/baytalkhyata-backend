@@ -55,6 +55,8 @@ const {
 	submitBankQuestionAnswer,
 } = require("../controllers/BankQuestionController");
 
+const { getPolicies } = require("../controllers/policyController");
+
 router.route("/profile").get(getAuthenticatedUser).patch(updateProfile);
 
 router.patch("/product/redeem/:productId", redeemProduct);
@@ -99,5 +101,7 @@ router
 	.route("/bank-questions")
 	.get(getBankQuestions)
 	.patch(submitBankQuestionAnswer);
+
+router.get("/policy", getPolicies);
 
 module.exports = router;

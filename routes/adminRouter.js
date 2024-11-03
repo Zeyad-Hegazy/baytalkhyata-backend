@@ -64,6 +64,14 @@ const { createBankQuestion } = require("../controllers/BankQuestionController");
 
 const { sendNotification } = require("../controllers/notificationController");
 
+const {
+	createPolicy,
+	getPolicies,
+	getPolicy,
+	updatePolicy,
+	deletePolicy,
+} = require("../controllers/policyController");
+
 router.delete("/student/meny", deleteMenyStudents);
 router.patch("/student/assign/:userId", assignDiploma);
 router.route("/student").post(createStudent).get(pagination, getStudents);
@@ -110,5 +118,12 @@ router.post("/bank-questions", createBankQuestion);
 router.post("/send-notification", (req, res) => {
 	sendNotification(req.app.get("io"))(req, res);
 });
+
+router.route("/policy").get(getPolicies).post(createPolicy);
+router
+	.route("/policy/:policyId")
+	.get(getPolicy)
+	.patch(updatePolicy)
+	.delete(deletePolicy);
 
 module.exports = router;
