@@ -111,7 +111,7 @@ exports.getAuthenticatedUser = async (req, res, next) => {
 				phone: user.phone,
 				email: user.email,
 				image: `${res.locals.baseUrl}/uploads/images/${user.image}`,
-				points: student.points,
+				points: user.points,
 			},
 			success: true,
 			message: "success",
