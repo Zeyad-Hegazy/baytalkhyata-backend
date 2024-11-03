@@ -404,18 +404,21 @@ exports.updateProfile = async (req, res, next) => {
 			return res.status(404).json({ message: "Student not found" });
 		}
 
-		const isTheSamePassword = await bcryptjs.compare(
-			password,
-			student.password
-		);
+		if (password) {
+			const isTheSamePassword = await bcryptjs.compare(
+				password,
+				student.password
+			);
 
-		if (isTheSamePassword) {
-			return res
-				.status(400)
-				.json({ message: "Cannot update to the same password" });
+			if (isTheSamePassword) {
+				return res
+					.status(400)
+					.json({ message: "Cannot update to the same password" });
+			}
+
+			const newPassword = await bcryptjs.hash(password, 12);
+			student.password = newPassword || student.password;
 		}
-
-		const newPassword = await bcryptjs.hash(password, 12);
 
 		if (student.image === "user-profile.png") {
 			const newImage = await saveAndDeleteImage(null, image, true);
@@ -428,7 +431,6 @@ exports.updateProfile = async (req, res, next) => {
 		student.fullName = fullName || student.fullName;
 		student.email = email || student.email;
 		student.phone = phone || student.phone;
-		student.password = newPassword || student.password;
 
 		await student.save();
 
