@@ -397,7 +397,7 @@ exports.updateProfile = async (req, res, next) => {
 		const { fullName, phone, email, image, password } = req.body;
 
 		const student = await Student.findById(studentId).select(
-			"fullName phone email password image"
+			"fullName phone email password image points"
 		);
 
 		if (!student) {
@@ -442,6 +442,7 @@ exports.updateProfile = async (req, res, next) => {
 				email: student.email,
 				phone: student.phone,
 				image: `${res.locals.baseUrl}/uploads/images/${student.image}`,
+				points: student.points,
 			},
 			success: true,
 			message: "Profile updated successfully",
