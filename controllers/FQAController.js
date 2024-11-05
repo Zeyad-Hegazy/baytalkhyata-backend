@@ -21,9 +21,10 @@ exports.createFQA = async (req, res, next) => {
 		await newFQA.save();
 
 		res.status(201).json({
+			status: "success",
+			result: newFQA,
 			success: true,
 			message: "FQA created successfully",
-			data: newFQA,
 		});
 	} catch (error) {
 		res.status(500).json({
@@ -74,7 +75,7 @@ exports.updateFQA = async (req, res) => {
 		res.status(200).json({
 			success: true,
 			message: "FQA updated successfully",
-			data: existingFQA,
+			result: existingFQA,
 		});
 	} catch (error) {
 		res.status(500).json({
