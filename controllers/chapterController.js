@@ -37,6 +37,7 @@ exports.createChapter = async (req, res, next) => {
 			result: {
 				_id: newChapter._id,
 				title: newChapter.title,
+				levels: newChapter.levels,
 			},
 			success: true,
 			message: "new chapter created successfully",

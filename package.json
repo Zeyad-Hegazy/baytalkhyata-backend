@@ -8,7 +8,11 @@
 		"start:dev": "nodemon server.js",
 		"start:prod": "set NODE_ENV=production && node server.js",
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"debug": "ndb server.js"
+		"debug": "ndb server.js",
+		"build:copy": "copyfiles \"*.js\" \"config/**\" \"constants/**\" \"controllers/**\" \"middlewares/**\" \"models/**\" \"routes/**\" \"uploads/**\" \"util/**\" dist && copyfiles package.json dist",
+		"build:minify": "uglifyjs app.js -o dist/app.min.js && uglifyjs server.js -o dist/server.min.js",
+		"build:clean": "rimraf dist/app.js dist/server.js",
+		"build": "npm run build:copy && npm run build:minify && npm run build:clean"
 	},
 	"author": "",
 	"license": "ISC",
@@ -28,5 +32,10 @@
 		"nodemailer": "^6.9.14",
 		"sharp": "^0.33.3",
 		"socket.io": "^4.7.5"
+	},
+	"devDependencies": {
+		"copyfiles": "^2.4.1",
+		"rimraf": "^6.0.1",
+		"uglify-js": "^3.19.3"
 	}
 }
