@@ -56,6 +56,7 @@ const {
 } = require("../controllers/BankQuestionController");
 
 const { getPolicies } = require("../controllers/policyController");
+const { getNotifications } = require("../controllers/notificationController");
 
 router.route("/profile").get(getAuthenticatedUser).patch(updateProfile);
 
@@ -103,5 +104,7 @@ router
 	.patch(submitBankQuestionAnswer);
 
 router.get("/policy", getPolicies);
+
+router.get("/notification", getNotifications);
 
 module.exports = router;
