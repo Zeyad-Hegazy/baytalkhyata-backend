@@ -87,9 +87,9 @@ exports.updateFQA = async (req, res) => {
 
 exports.getQuestionAnswers = async (req, res, next) => {
 	try {
-		const { fqaId } = req.params;
+		const { question } = req.query;
 
-		const fqa = await FQA.findById(fqaId)
+		const fqa = await FQA.findOne({ title: question })
 			.select("replayes")
 			.populate({ path: "replayes", select: "title" });
 

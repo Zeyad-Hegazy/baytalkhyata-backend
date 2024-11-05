@@ -110,8 +110,8 @@ router.route("/category").post(createCategory).get(getCategories);
 router.post("/category/item", createCategoryItem);
 router.route("/category/item/:categoryId").get(getCategoryItems);
 
-router.route("/FQA").post(createFQA);
-router.route("/FQA/:fqaId").patch(updateFQA).get(getQuestionAnswers);
+router.route("/FQA").post(createFQA).get(getQuestionAnswers);
+router.route("/FQA/:fqaId").patch(updateFQA);
 
 router.post("/bank-questions", createBankQuestion);
 
