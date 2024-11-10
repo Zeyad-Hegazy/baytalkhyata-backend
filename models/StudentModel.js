@@ -65,14 +65,16 @@ const StudentSchema = new mongoose.Schema(
 );
 
 StudentSchema.methods.updateTotalPoints = async function () {
-	let totalPoints = 0;
-	for (const enrolled of this.enrolledDiplomas) {
-		totalPoints += enrolled.totalPointsEarned;
-	}
-	this.points = totalPoints;
-	await this.save();
-};
+	const totalPoints = this.enrolledDiplomas.reduce(
+		(sum, diploma) => sum + (diploma.totalPointsEarned || 0),
+		0
+	);
 
+	if (this.points !== totalPoints) {
+		this.points = totalPoints;
+		await this.save();
+	}
+};
 const Student = mongoose.model("Student", StudentSchema);
 
 module.exports = Student;
