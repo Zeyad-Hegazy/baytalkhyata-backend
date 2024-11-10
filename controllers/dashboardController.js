@@ -6,7 +6,7 @@ exports.calculateDAU = async (req, res) => {
 		oneDayAgo.setDate(oneDayAgo.getDate() - 1);
 
 		const dauCount = await Student.countDocuments({
-			loginHistory: { $gte: oneDayAgo },
+			"loginHistory.login": { $gte: oneDayAgo },
 		});
 
 		return res.status(200).json({ dailyActiveUsers: dauCount });
@@ -21,7 +21,7 @@ exports.calculateMAU = async (req, res) => {
 		oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
 		const mauCount = await Student.countDocuments({
-			loginHistory: { $gte: oneMonthAgo },
+			"loginHistory.login": { $gte: oneMonthAgo },
 		});
 
 		return res.status(200).json({ monthlyActiveUsers: mauCount });
@@ -38,14 +38,14 @@ exports.calculateRetentionRate = async (req, res) => {
 		twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
 
 		const previousPeriodUsers = await Student.countDocuments({
-			loginHistory: { $gte: twoMonthsAgo, $lt: oneMonthAgo },
+			"loginHistory.login": { $gte: twoMonthsAgo, $lt: oneMonthAgo },
 		});
+
 		const currentPeriodReturningUsers = await Student.countDocuments({
-			loginHistory: { $gte: oneMonthAgo },
+			"loginHistory.login": { $gte: oneMonthAgo },
 		});
 
 		let retentionRate = 0;
-
 		if (previousPeriodUsers > 0) {
 			retentionRate = (currentPeriodReturningUsers / previousPeriodUsers) * 100;
 		}
@@ -79,7 +79,6 @@ exports.calculateUserGrowthRate = async (req, res) => {
 		});
 
 		let growthRate = 0;
-
 		if (newUsersLastMonth > 0) {
 			growthRate =
 				((newUsersCurrentMonth - newUsersLastMonth) / newUsersLastMonth) * 100;

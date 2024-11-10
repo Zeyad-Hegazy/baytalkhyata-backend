@@ -59,7 +59,12 @@ const StudentSchema = new mongoose.Schema(
 		},
 		role: { type: String, default: "user" },
 		lastSeen: { type: Date, default: Date.now },
-		loginHistory: [{ type: Date }],
+		loginHistory: [
+			{
+				login: { type: Date, required: true, _id: false },
+				logout: { type: Date, default: null, _id: false },
+			},
+		],
 	},
 	{ timestamps: true }
 );
@@ -75,6 +80,20 @@ StudentSchema.methods.updateTotalPoints = async function () {
 		await this.save();
 	}
 };
+
+StudentSchema.methods.recordLogin = function () {
+	this.loginHistory.push({ login: new Date() });
+	return this.save();
+};
+
+StudentSchema.methods.recordLogout = function () {
+	const lastSession = this.loginHistory[this.loginHistory.length - 1];
+	if (lastSession && !lastSession.logout) {
+		lastSession.logout = new Date();
+		return this.save();
+	}
+};
+
 const Student = mongoose.model("Student", StudentSchema);
 
 module.exports = Student;

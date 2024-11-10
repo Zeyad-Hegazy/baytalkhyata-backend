@@ -67,8 +67,7 @@ exports.login = async (req, res, next) => {
 		if (phone) {
 			const student = await loginUser(Student, "phone", phone, password);
 			if (student) {
-				student.loginHistory.push(new Date());
-				await student.save();
+				await student.recordLogin();
 				const token = buildToken(student).token;
 				return res.status(200).json({
 					status: "success",
@@ -115,7 +114,13 @@ exports.tokenBlackList = new Set();
 // @route POST /api/v1/auth/logout
 // @access Private
 exports.logout = async (req, res, next) => {
+	const userRole = req.user.role;
 	const token = req.headers.authorization.split(" ")[1];
+	if (userRole === "user") {
+		const userId = req.user._id;
+		const student = await Student.findById(userId);
+		if (student) await student.recordLogout();
+	}
 	this.tokenBlackList.add(token);
 	res.status(200).json({ status: "success", message: "success" });
 };
