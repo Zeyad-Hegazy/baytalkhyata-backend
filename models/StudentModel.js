@@ -59,6 +59,7 @@ const StudentSchema = new mongoose.Schema(
 		},
 		role: { type: String, default: "user" },
 		lastSeen: { type: Date, default: Date.now },
+		loginHistory: [{ type: Date }],
 	},
 	{ timestamps: true }
 );

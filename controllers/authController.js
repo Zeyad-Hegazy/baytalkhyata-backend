@@ -67,6 +67,8 @@ exports.login = async (req, res, next) => {
 		if (phone) {
 			const student = await loginUser(Student, "phone", phone, password);
 			if (student) {
+				student.loginHistory.push(new Date());
+				await student.save();
 				const token = buildToken(student).token;
 				return res.status(200).json({
 					status: "success",
