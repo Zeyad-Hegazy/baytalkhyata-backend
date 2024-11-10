@@ -696,6 +696,7 @@ exports.completeItem = async (req, res, next) => {
 		}
 
 		await student.save();
+		await student.updateTotalPoints();
 
 		res.status(200).json({
 			status: "success",
