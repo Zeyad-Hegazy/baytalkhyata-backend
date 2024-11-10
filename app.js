@@ -20,6 +20,7 @@ const adminRoutes = require("./routes/adminRouter.js");
 const studentRoutes = require("./routes/studentRouter.js");
 const conversationRoutes = require("./routes/conversationRouter.js");
 const messageRoutes = require("./routes/messageRouter.js");
+const dashboardRoutes = require("./routes/dashboardRouter.js");
 
 dbConnection();
 
@@ -96,7 +97,15 @@ if (process.env.NODE_ENV === "development") {
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/v1/auth", authRoutes);
+
+app.use(
+	"/api/v1/dashboard",
+	isAuth,
+	isRole([{ value: ADMIN }]),
+	dashboardRoutes
+);
 app.use("/api/v1/admin", isAuth, isRole([{ value: ADMIN }]), adminRoutes);
+
 app.use(
 	"/api/v1/student",
 	isAuth,
