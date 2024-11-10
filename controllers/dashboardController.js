@@ -1,5 +1,7 @@
 const Student = require("../models/StudentModel");
 
+// User Activity
+
 exports.calculateDAU = async (req, res) => {
 	try {
 		const oneDayAgo = new Date();
@@ -87,6 +89,73 @@ exports.calculateUserGrowthRate = async (req, res) => {
 		}
 
 		return res.status(200).json({ userGrowthRate: growthRate.toFixed(2) });
+	} catch (error) {
+		return res
+			.status(500)
+			.json({ message: "Error calculating user growth rate", error });
+	}
+};
+
+// Engagement
+
+exports.calculateAverageSessionDuration = async (req, res) => {
+	try {
+		const students = await Student.find();
+		let totalSessionDuration = 0;
+		let sessionCount = 0;
+
+		students.forEach((student) => {
+			student.loginHistory.forEach((session) => {
+				if (session.logout) {
+					const duration = (session.logout - session.login) / (1000 * 60);
+					totalSessionDuration += duration;
+					sessionCount += 1;
+				}
+			});
+		});
+
+		const averageSessionDuration =
+			sessionCount > 0 ? totalSessionDuration / sessionCount : 0;
+
+		return res.status(200).json({ averageSessionDuration });
+	} catch (error) {
+		return res
+			.status(500)
+			.json({ message: "Error calculating user growth rate", error });
+	}
+};
+
+exports.calculateEngagementRate = async (req, res) => {
+	try {
+		const totalUsers = await Student.countDocuments();
+		const engagedUsersCount = await Student.countDocuments({
+			$or: [
+				{ "enrolledDiplomas.0": { $exists: true } },
+				{ "quizesTaken.0": { $exists: true } },
+			],
+		});
+
+		const engagementRate =
+			totalUsers > 0 ? (engagedUsersCount / totalUsers) * 100 : 0;
+
+		return res.status(200).json({ engagementRate: engagementRate.toFixed(2) });
+	} catch (error) {
+		return res
+			.status(500)
+			.json({ message: "Error calculating user growth rate", error });
+	}
+};
+
+exports.calculateCourseEnrollmentNumbers = async (req, res) => {
+	try {
+		const students = await Student.find();
+		let totalEnrollments = 0;
+
+		students.forEach((student) => {
+			totalEnrollments += student.enrolledDiplomas.length;
+		});
+
+		return res.status(200).json({ totalEnrollments });
 	} catch (error) {
 		return res
 			.status(500)
