@@ -162,3 +162,126 @@ exports.calculateCourseEnrollmentNumbers = async (req, res) => {
 			.json({ message: "Error calculating user growth rate", error });
 	}
 };
+
+// Quizzes
+
+exports.calculateAverageQuizScore = async (req, res) => {
+	try {
+		const students = await Student.find();
+		let totalScore = 0;
+		let totalQuizzes = 0;
+
+		students.forEach((student) => {
+			student.quizesTaken.forEach((quiz) => {
+				totalScore += quiz.score;
+				totalQuizzes += 1;
+			});
+		});
+
+		const averageScore = totalQuizzes > 0 ? totalScore / totalQuizzes : 0;
+
+		return res.status(200).json({ averageQuizScore: averageScore.toFixed(2) });
+	} catch (error) {
+		return res
+			.status(500)
+			.json({ message: "Error calculating average quiz score", error });
+	}
+};
+
+exports.calculateQuizPassRate = async (req, res) => {
+	try {
+		const students = await Student.find();
+		let passedQuizzes = 0;
+		let totalQuizzes = 0;
+
+		students.forEach((student) => {
+			student.quizesTaken.forEach((quiz) => {
+				if (quiz.passed) passedQuizzes += 1;
+				totalQuizzes += 1;
+			});
+		});
+
+		const passRate =
+			totalQuizzes > 0 ? (passedQuizzes / totalQuizzes) * 100 : 0;
+
+		return res.status(200).json({ quizPassRate: passRate.toFixed(2) });
+	} catch (error) {
+		return res
+			.status(500)
+			.json({ message: "Error calculating quiz pass rate", error });
+	}
+};
+
+exports.calculateQuizAttemptRate = async (req, res) => {
+	try {
+		const students = await Student.find();
+		let totalAttempts = 0;
+		let totalEnrollments = 0;
+
+		students.forEach((student) => {
+			totalAttempts += student.quizesTaken.length;
+			totalEnrollments += student.enrolledDiplomas.length;
+		});
+
+		const attemptRate =
+			totalEnrollments > 0 ? totalAttempts / totalEnrollments : 0;
+
+		return res.status(200).json({ quizAttemptRate: attemptRate.toFixed(2) });
+	} catch (error) {
+		return res
+			.status(500)
+			.json({ message: "Error calculating quiz attempt rate", error });
+	}
+};
+
+exports.calculateQuizCompletionRate = async (req, res) => {
+	try {
+		const students = await Student.find();
+		let completedQuizzes = 0;
+		let totalQuizzes = 0;
+
+		students.forEach((student) => {
+			student.quizesTaken.forEach((quiz) => {
+				if (quiz.score > 0) completedQuizzes += 1;
+				totalQuizzes += 1;
+			});
+		});
+
+		const completionRate =
+			totalQuizzes > 0 ? (completedQuizzes / totalQuizzes) * 100 : 0;
+
+		return res
+			.status(200)
+			.json({ quizCompletionRate: completionRate.toFixed(2) });
+	} catch (error) {
+		return res
+			.status(500)
+			.json({ message: "Error calculating quiz completion rate", error });
+	}
+};
+
+exports.calculateCorrectAnswerRate = async (req, res) => {
+	try {
+		const students = await Student.find();
+		let totalCorrectAnswers = 0;
+		let totalQuestions = 0;
+
+		students.forEach((student) => {
+			student.quizesTaken.forEach((quiz) => {
+				totalCorrectAnswers += quiz.correctAnswers;
+				totalQuestions += quiz.submetedAnswers.length;
+			});
+		});
+
+		const correctAnswerRate =
+			totalQuestions > 0 ? (totalCorrectAnswers / totalQuestions) * 100 : 0;
+
+		return res
+			.status(200)
+			.json({ correctAnswerRate: correctAnswerRate.toFixed(2) });
+	} catch (error) {
+		return res
+			.status(500)
+			.json({ message: "Error calculating correct answer rate", error });
+	}
+};
