@@ -117,7 +117,9 @@ exports.calculateAverageSessionDuration = async (req, res) => {
 		const averageSessionDuration =
 			sessionCount > 0 ? totalSessionDuration / sessionCount : 0;
 
-		return res.status(200).json({ averageSessionDuration });
+		return res
+			.status(200)
+			.json({ averageSessionDuration: averageSessionDuration.toFixed(2) });
 	} catch (error) {
 		return res
 			.status(500)
