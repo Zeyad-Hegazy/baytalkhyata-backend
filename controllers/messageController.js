@@ -59,6 +59,7 @@ exports.getMessagesList = async (req, res, next) => {
 					_id: message._id,
 					sender: student ? student.fullName : "Unknown",
 					senderImage: `${res.locals.baseUrl}/uploads/images/${student.image}`,
+					senderId: student._id,
 					text: truncatedText,
 					createdAt: message.createdAt,
 				};
