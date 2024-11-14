@@ -46,6 +46,7 @@ const {
 	createQuizLevel,
 	addQuizToSection,
 	getChapterLevels,
+	getLevelSections,
 } = require("../controllers/chapterController");
 
 const {
@@ -101,6 +102,7 @@ router
 router.route("/diploma").post(createDiploma).get(getDiplomas);
 router.route("/diploma/:diplomaId").delete(deleteDiploma).patch(updateDiploma);
 
+router.get("/chapter/level/section/:levelId", getLevelSections);
 router.get("/chapter/levels/:chapterId", getChapterLevels);
 router.route("/chapter").post(createChapter);
 router.patch("/chapter/quiz", createQuizLevel);
