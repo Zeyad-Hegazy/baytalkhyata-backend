@@ -41,6 +41,7 @@ const {
 const { pagination } = require("../middlewares/pagination");
 
 const {
+	getDiplomaChapters,
 	createChapter,
 	addLevelToChapter,
 	createQuizLevel,
@@ -48,6 +49,7 @@ const {
 	getChapterLevels,
 	getLevelItems,
 	getSectionItem,
+	addItemToLevel,
 } = require("../controllers/chapterController");
 
 const {
@@ -103,12 +105,14 @@ router
 router.route("/diploma").post(createDiploma).get(getDiplomas);
 router.route("/diploma/:diplomaId").delete(deleteDiploma).patch(updateDiploma);
 
+router.get("/chapter/:diplomaId", getDiplomaChapters);
 router.get("/chapter/level/item/:itemId", getSectionItem);
 router.get("/chapter/level/:levelId", getLevelItems);
 router.get("/chapter/levels/:chapterId", getChapterLevels);
 router.route("/chapter").post(createChapter);
 router.patch("/chapter/quiz", createQuizLevel);
 router.route("/chapter/:chapterId").patch(addLevelToChapter);
+router.route("/chapter/level/item/:levelId").patch(addItemToLevel);
 router.patch("/section/quiz", addQuizToSection);
 
 router.route("/category").post(createCategory).get(getCategories);
