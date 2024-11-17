@@ -68,7 +68,7 @@ exports.addLevelToChapter = async (req, res, next) => {
 
 		const sectionPromises = sections.map(async (sectionData, index) => {
 			const newSection = await Section.create({
-				title: sectionData.title,
+				title: "section " + index + 1,
 				level: level._id,
 				order: sectionData.order || index + 1,
 			});
@@ -387,62 +387,46 @@ exports.getChapterLevels = async (req, res, next) => {
 	}
 };
 
-exports.getLevelSections = async (req, res, next) => {
+exports.getLevelItems = async (req, res, next) => {
 	try {
 		const { levelId } = req.params;
 
+		// Find the level and populate its items and quizzes
 		const level = await Level.findById(levelId)
 			.select("title order sections")
 			.populate({
 				path: "sections",
-				select: "title order items quizes",
-				options: { sort: { order: 1 } },
-				populate: [
-					{
-						path: "items",
-						select: "title order type points",
-						options: { sort: { order: 1 } },
-					},
-					{
-						path: "quizes",
-						select: "title",
-					},
-				],
+				select: "items",
+				populate: {
+					path: "items",
+					select: "title order type points file size description",
+					options: { sort: { order: 1 } },
+				},
 			});
 
 		if (!level) {
 			return res.status(404).json({ message: "Level not found" });
 		}
 
-		const mergedSections = level.sections.map((section) => {
-			const mergedItems = [
-				...section.items.map((item) => ({
-					...item.toObject(),
-					itemType: "media",
-				})),
-				...section.quizes.map((quiz) => ({
-					...quiz.toObject(),
-					itemType: "quiz",
-				})),
-			];
+		// Combine only items into a unified list
+		const items = level.sections.flatMap((section) =>
+			section.items.map((item) => ({
+				...item.toObject(),
+			}))
+		);
 
-			mergedItems.sort((a, b) => a.order - b.order);
+		// Sort items by order
+		items.sort((a, b) => a.order - b.order);
 
-			return {
-				...section.toObject(),
-				items: mergedItems,
-				quizes: undefined,
-			};
-		});
-
-		const result = {
-			...level.toObject(),
-			sections: mergedSections,
-		};
-
+		// Return the level with the list of items (excluding quizzes)
 		res.status(200).json({
 			status: "success",
-			result,
+			result: {
+				_id: level._id,
+				title: level.title,
+				order: level.order,
+				items, // Only media items are included
+			},
 			success: true,
 			message: "success",
 		});

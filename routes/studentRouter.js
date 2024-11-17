@@ -30,7 +30,7 @@ const {
 	///////////
 	getChapters,
 	getChapterLevels,
-	getLevelSections,
+	getLevelItems,
 	getSectionItem,
 	completeItem,
 	getSectionQuiz,
@@ -75,7 +75,7 @@ router.get("/diploma/chapter/quiz/:chapterId", getQuizLevel);
 // new diploma queries
 router.get("/chapter/:diplomaId", getChapters);
 router.get("/chapter/level/:chapterId", getChapterLevels);
-router.get("/chapter/level/section/:levelId", getLevelSections);
+router.get("/chapter/level/section/:levelId", getLevelItems);
 router.get("/chapter/level/section/item/:itemId", getSectionItem);
 router.patch("/chapter/quiz/:quizId", finishFinalQuiz);
 
