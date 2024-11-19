@@ -1,6 +1,13 @@
 const Diploma = require("../models/DiplomaModel");
+const Chapter = require("../models/ChapterModel");
+const Level = require("../models/LevelModel");
+const Section = require("../models/SectionModel");
+const Item = require("../models/ItemModel");
 const Student = require("../models/StudentModel");
+
 const ApiError = require("../util/ApiError");
+const deleteFile = require("../util/deleteFile");
+
 const {
 	calculateCompletionPercentage,
 	calculateChapterCompletionPercentage,
@@ -69,16 +76,63 @@ exports.deleteDiploma = async (req, res, next) => {
 	try {
 		const { diplomaId } = req.params;
 
+		if (!diplomaId) {
+			return res
+				.status(400)
+				.json({ success: false, message: "Diploma ID is required." });
+		}
+
+		const chapters = await Chapter.find({ diploma: diplomaId });
+
+		for (const chapter of chapters) {
+			for (const levelId of chapter.levels) {
+				const level = await Level.findById(levelId);
+				if (!level) continue;
+
+				const sections = await Section.find({ level: levelId });
+
+				for (const section of sections) {
+					for (const itemId of section.items) {
+						const item = await Item.findById(itemId);
+						if (item) {
+							if (item.file) {
+								const folderMap = {
+									video: "videos",
+									pdf: "pdfs",
+									image: "images",
+									audio: "audios",
+								};
+
+								const folder = folderMap[item.type];
+								if (folder) {
+									await deleteFile(item.file, folder);
+								}
+							}
+
+							await item.deleteOne();
+						}
+					}
+
+					await section.deleteOne();
+				}
+
+				await level.deleteOne();
+			}
+
+			await chapter.deleteOne();
+		}
+
 		await Diploma.findByIdAndDelete(diplomaId);
 
 		return res.status(200).json({
 			status: "success",
 			result: null,
 			success: true,
-			message: "Diploma deleted successfully",
+			message: "Diploma and all associated data deleted successfully",
 		});
 	} catch (error) {
-		return next(new ApiError("Somthing went wrong : " + error, 500));
+		console.error("Error deleting diploma:", error);
+		return next(new ApiError("Something went wrong: " + error.message, 500));
 	}
 };
 

@@ -9,6 +9,7 @@ const Section = require("../models/SectionModel");
 const Item = require("../models/ItemModel");
 
 const ApiError = require("../util/ApiError");
+const deleteFile = require("../util/deleteFile");
 
 const { saveAndDeleteVideo } = require("../util/videoUtility");
 const { saveAndDeleteAudio } = require("../util/audioUtility");
@@ -18,16 +19,6 @@ const { saveAndDeletePdfFS } = require("../util/pdfUtility");
 const Answer = require("../models/AnswerModel");
 const Question = require("../models/QuestionModel");
 const Quiz = require("../models/QuizModel");
-
-const deleteFile = async (filePath, folder) => {
-	try {
-		const fullPath = path.join("uploads", folder, filePath);
-		const fileExists = fs.existsSync(fullPath);
-		if (fileExists) await fs.promises.unlink(fullPath);
-	} catch (error) {
-		console.error("Error deleting file:", error);
-	}
-};
 
 exports.createChapter = async (req, res, next) => {
 	const { title, diploma } = req.body;
@@ -1036,9 +1027,7 @@ exports.deleteChapter = async (req, res, next) => {
 								video: "videos",
 								pdf: "pdfs",
 								image: "images",
-								text: "texts",
 								audio: "audios",
-								quiz: "quizzes",
 							};
 
 							const folder = folderMap[item.type];
