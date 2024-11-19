@@ -946,6 +946,63 @@ exports.deleteLevelItem = async (req, res, next) => {
 	}
 };
 
+exports.deleteLevel = async (req, res, next) => {
+	try {
+		const { levelId } = req.params;
+
+		if (!levelId) {
+			return res
+				.status(400)
+				.json({ success: false, message: "Level ID is required." });
+		}
+
+		const level = await Level.findById(levelId);
+		if (!level) {
+			return res
+				.status(404)
+				.json({ success: false, message: "Level not found." });
+		}
+
+		const sections = await Section.find({ _id: { $in: level.sections } });
+
+		for (const section of sections) {
+			for (const itemId of section.items) {
+				const item = await Item.findById(itemId);
+				if (item) {
+					if (item.file) {
+						const folderMap = {
+							video: "videos",
+							pdf: "pdfs",
+							image: "images",
+							audio: "audios",
+						};
+
+						const folder = folderMap[item.type];
+						if (folder) {
+							await deleteFile(item.file, folder);
+						}
+					}
+
+					await item.deleteOne();
+				}
+			}
+
+			await section.deleteOne();
+		}
+
+		await level.deleteOne();
+
+		return res.status(200).json({
+			success: true,
+			message: "Level and all associated items deleted successfully.",
+		});
+	} catch (error) {
+		res
+			.status(500)
+			.json({ success: false, message: "Server error", error: error.message });
+	}
+};
+
 // OLD
 exports.getChapterLevel = async (req, res) => {
 	try {
