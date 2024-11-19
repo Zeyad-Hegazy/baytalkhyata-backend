@@ -1003,6 +1003,76 @@ exports.deleteLevel = async (req, res, next) => {
 	}
 };
 
+exports.deleteChapter = async (req, res, next) => {
+	try {
+		const { chapterId } = req.params;
+
+		if (!chapterId) {
+			return res
+				.status(400)
+				.json({ success: false, message: "Chapter ID is required." });
+		}
+
+		const chapter = await Chapter.findById(chapterId);
+		if (!chapter) {
+			return res
+				.status(404)
+				.json({ success: false, message: "Chapter not found." });
+		}
+
+		for (const levelId of chapter.levels) {
+			const level = await Level.findById(levelId);
+			if (!level) continue;
+
+			const sections = await Section.find({ level: levelId });
+
+			for (const section of sections) {
+				for (const itemId of section.items) {
+					const item = await Item.findById(itemId);
+					if (item) {
+						// Delete associated file
+						if (item.file) {
+							const folderMap = {
+								video: "videos",
+								pdf: "pdfs",
+								image: "images",
+								text: "texts",
+								audio: "audios",
+								quiz: "quizzes",
+							};
+
+							const folder = folderMap[item.type];
+							if (folder) {
+								await deleteFile(item.file, folder);
+							}
+						}
+
+						// Delete the item
+						await item.deleteOne();
+					}
+				}
+
+				await section.deleteOne();
+			}
+
+			await level.deleteOne();
+		}
+
+		await chapter.deleteOne();
+
+		return res.status(200).json({
+			success: true,
+			message:
+				"Chapter and all associated levels and items deleted successfully.",
+		});
+	} catch (error) {
+		console.error("Error deleting chapter:", error);
+		res
+			.status(500)
+			.json({ success: false, message: "Server error", error: error.message });
+	}
+};
+
 // OLD
 exports.getChapterLevel = async (req, res) => {
 	try {

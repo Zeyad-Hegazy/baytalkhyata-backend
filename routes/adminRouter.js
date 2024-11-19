@@ -52,6 +52,7 @@ const {
 	addItemToLevel,
 	deleteLevelItem,
 	deleteLevel,
+	deleteChapter,
 } = require("../controllers/chapterController");
 
 const {
@@ -119,6 +120,7 @@ router.patch("/section/quiz", addQuizToSection);
 
 router.delete("/chapter/level/item/:itemId", deleteLevelItem);
 router.delete("/chapter/level/:levelId", deleteLevel);
+router.delete("/chapter/:chapterId", deleteChapter);
 
 router.route("/category").post(createCategory).get(getCategories);
 
