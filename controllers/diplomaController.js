@@ -50,16 +50,9 @@ exports.createDiploma = async (req, res, next) => {
 
 exports.getDiplomas = async (req, res, next) => {
 	try {
-		const diplomas = await Diploma.find({})
-			.select(
-				"title description totalHours chapters price totalPoints expiresIn"
-			)
-			.populate({ path: "chapters", select: "title" });
-
-		// const diplomasWithChapterLength = diplomas.map((diploma) => ({
-		// 	...diploma._doc,
-		// 	chapters: diploma.chapters.length,
-		// }));
+		const diplomas = await Diploma.find({}).select(
+			"title description totalHours chapters price totalPoints expiresIn"
+		);
 
 		return res.status(200).json({
 			status: "success",
