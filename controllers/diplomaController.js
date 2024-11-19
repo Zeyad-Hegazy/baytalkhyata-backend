@@ -157,7 +157,7 @@ exports.updateDiploma = async (req, res, next) => {
 				totalHours: updatedDiploma.totalHours,
 				price: updatedDiploma.price,
 				totalPoints: updatedDiploma.totalPoints,
-				chapters: updatedDiploma.chapters.length,
+				chapters: updatedDiploma.chapters,
 				expiresIn: updatedDiploma.expiresIn,
 			},
 			success: true,

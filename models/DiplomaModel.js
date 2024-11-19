@@ -8,7 +8,7 @@ const DiplomaSchema = new mongoose.Schema(
 		totalHours: Number,
 		certificateTemplate: { type: String },
 		chapters: [{ type: mongoose.Schema.ObjectId, ref: "Chapter", default: [] }],
-		// totalPoints: { type: Number, default: 0 },
+		totalPoints: { type: Number, default: 0 },
 		expiresIn: Date,
 	},
 	{ timestamps: true }
