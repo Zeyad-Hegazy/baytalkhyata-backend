@@ -1084,7 +1084,7 @@ exports.updateChapter = async (req, res, next) => {
 
 		if (title) chapter.title = title;
 
-		const updatedChapter = await chapter.save();
+		await chapter.save();
 
 		return res.status(200).json({
 			status: "success",
@@ -1093,6 +1093,46 @@ exports.updateChapter = async (req, res, next) => {
 		});
 	} catch (error) {
 		console.error("Error updating chapter:", error);
+		return res.status(500).json({
+			success: false,
+			message: "Server error.",
+			error: error.message,
+		});
+	}
+};
+
+exports.updateLevel = async (req, res, next) => {
+	try {
+		const { title, order } = req.body;
+		const { levelId } = req.params;
+
+		if (!levelId) {
+			return res.status(400).json({
+				success: false,
+				message: "Level ID is required.",
+			});
+		}
+
+		const level = await Level.findById(levelId);
+		if (!level) {
+			return res.status(404).json({
+				success: false,
+				message: "Level not found.",
+			});
+		}
+
+		if (title) level.title = title;
+		if (order) level.order = order;
+
+		await level.save();
+
+		return res.status(200).json({
+			status: "success",
+			success: true,
+			message: "Level updated successfully.",
+		});
+	} catch (error) {
+		console.error("Error updating level:", error);
 		return res.status(500).json({
 			success: false,
 			message: "Server error.",

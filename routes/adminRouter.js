@@ -54,6 +54,7 @@ const {
 	deleteLevel,
 	deleteChapter,
 	updateChapter,
+	updateLevel,
 } = require("../controllers/chapterController");
 
 const {
@@ -111,7 +112,11 @@ router.route("/diploma/:diplomaId").delete(deleteDiploma).patch(updateDiploma);
 
 router.get("/chapter/:diplomaId", getDiplomaChapters);
 router.get("/chapter/level/item/:itemId", getSectionItem);
-router.get("/chapter/level/:levelId", getLevelItems);
+router
+	.route("/chapter/level/:levelId")
+	.get(getLevelItems)
+	.patch(updateLevel)
+	.delete(deleteLevel);
 router.get("/chapter/levels/:chapterId", getChapterLevels);
 router.route("/chapter").post(createChapter);
 router.patch("/chapter/quiz", createQuizLevel);
@@ -120,7 +125,6 @@ router.route("/chapter/level/item/:levelId").patch(addItemToLevel);
 router.patch("/section/quiz", addQuizToSection);
 
 router.delete("/chapter/level/item/:itemId", deleteLevelItem);
-router.delete("/chapter/level/:levelId", deleteLevel);
 
 router.delete("/chapter/:chapterId", deleteChapter);
 router.patch("/chapter/update/:chapterId", updateChapter);
