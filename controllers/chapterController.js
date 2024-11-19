@@ -19,6 +19,16 @@ const Answer = require("../models/AnswerModel");
 const Question = require("../models/QuestionModel");
 const Quiz = require("../models/QuizModel");
 
+const deleteFile = async (filePath, folder) => {
+	try {
+		const fullPath = path.join("uploads", folder, filePath);
+		const fileExists = fs.existsSync(fullPath);
+		if (fileExists) await fs.promises.unlink(fullPath);
+	} catch (error) {
+		console.error("Error deleting file:", error);
+	}
+};
+
 exports.createChapter = async (req, res, next) => {
 	const { title, diploma } = req.body;
 
@@ -890,6 +900,49 @@ exports.finishFinalQuiz = async (req, res, next) => {
 		return res
 			.status(500)
 			.json({ message: "Server error", error: error.message });
+	}
+};
+
+exports.deleteLevelItem = async (req, res, next) => {
+	try {
+		const { itemId } = req.params;
+
+		if (!itemId) {
+			return res
+				.status(400)
+				.json({ success: false, message: "Item ID is required." });
+		}
+
+		const item = await Item.findById(itemId);
+		if (!item) {
+			return res
+				.status(404)
+				.json({ success: false, message: "Item not found." });
+		}
+
+		if (item.file) {
+			const folderMap = {
+				video: "videos",
+				pdf: "pdfs",
+				image: "images",
+				audio: "audios",
+			};
+
+			const folder = folderMap[item.type];
+			if (folder) {
+				await deleteFile(item.file, folder);
+			} else {
+				console.error(`No folder mapping found for type: ${item.type}`);
+			}
+		}
+
+		await item.deleteOne();
+
+		return res
+			.status(200)
+			.json({ success: true, message: "Item deleted successfully." });
+	} catch (error) {
+		res.status(500).json({ message: "Server error", error: error.message });
 	}
 };
 

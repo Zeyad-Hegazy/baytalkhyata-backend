@@ -1,32 +1,18 @@
-version: '3.8'
+version: "3.8"
 
 services:
   byt-backend:
     build:
-      context: ./backend
+      context: ./
       dockerfile: Dockerfile
     container_name: byt-backend
     ports:
-      - "5005:5000"  # Map backend port 5000 to host
+      - "5005:5000" # Map backend port 5000 to host
     environment:
-      - NODE_ENV=production  # Or 'production'
+      - NODE_ENV=production # Or 'production'
       - PORT=5000
     networks:
       - byt-app-network
-
-  byt-frontend:
-    build:
-      context: ./front
-      dockerfile: Dockerfile
-    container_name: byt-frontend
-    ports:
-      - "8090:80"
-    environment:
-      - NODE_ENV=production  # Or 'production'
-    networks:
-      - byt-app-network
-    depends_on:
-      - byt-backend  # Ensure backend starts before frontend
 
 networks:
   byt-app-network:
