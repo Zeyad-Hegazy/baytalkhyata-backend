@@ -80,7 +80,7 @@ exports.addLevelToChapter = async (req, res, next) => {
 			status: "success",
 			result: level,
 			success: true,
-			message: "New level created with one empty section",
+			message: "New level created",
 		});
 	} catch (error) {
 		return next(new ApiError("Something went wrong: " + error, 500));
@@ -1059,6 +1059,45 @@ exports.deleteChapter = async (req, res, next) => {
 		res
 			.status(500)
 			.json({ success: false, message: "Server error", error: error.message });
+	}
+};
+
+exports.updateChapter = async (req, res, next) => {
+	try {
+		const { title } = req.body;
+		const { chapterId } = req.params;
+
+		if (!chapterId) {
+			return res.status(400).json({
+				success: false,
+				message: "Chapter ID is required.",
+			});
+		}
+
+		const chapter = await Chapter.findById(chapterId);
+		if (!chapter) {
+			return res.status(404).json({
+				success: false,
+				message: "Chapter not found.",
+			});
+		}
+
+		if (title) chapter.title = title;
+
+		const updatedChapter = await chapter.save();
+
+		return res.status(200).json({
+			status: "success",
+			success: true,
+			message: "Chapter updated successfully.",
+		});
+	} catch (error) {
+		console.error("Error updating chapter:", error);
+		return res.status(500).json({
+			success: false,
+			message: "Server error.",
+			error: error.message,
+		});
 	}
 };
 
