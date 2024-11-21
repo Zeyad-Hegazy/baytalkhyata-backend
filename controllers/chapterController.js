@@ -20,6 +20,8 @@ const Answer = require("../models/AnswerModel");
 const Question = require("../models/QuestionModel");
 const Quiz = require("../models/QuizModel");
 
+const itemQueue = require("../queues/itemQueue");
+
 exports.createChapter = async (req, res, next) => {
 	const { title, diploma } = req.body;
 
@@ -87,6 +89,7 @@ exports.addLevelToChapter = async (req, res, next) => {
 	}
 };
 
+// with queu
 exports.addItemToLevel = async (req, res, next) => {
 	try {
 		const { levelId } = req.params;
@@ -101,226 +104,75 @@ exports.addItemToLevel = async (req, res, next) => {
 			return next(new ApiError("Section not found", 404));
 		}
 
-		let fileUrl;
-		switch (item.type) {
-			case "video":
-				fileUrl = await saveAndDeleteVideo(null, item.fileBuffer, "videos");
-				break;
-			case "audio":
-				fileUrl = await saveAndDeleteAudio(null, item.fileBuffer, "audios");
-				break;
-			case "image":
-				fileUrl = await saveAndDeleteImage(null, item.fileBuffer, "images");
-				break;
-			case "pdf":
-				fileUrl = await saveAndDeletePdfFS(null, item.fileBuffer, "pdfs");
-				break;
-			case "text":
-				fileUrl = item.fileContent;
-				break;
-			default:
-				return next(new ApiError("Unsupported item type", 400));
-		}
-
-		const newItem = await Item.create({
-			...item,
-			file: fileUrl,
-			section: section._id,
+		await itemQueue.add({
+			item,
+			levelId,
+			sectionId: section._id,
 		});
 
-		section.items.push(newItem._id);
-		await section.save();
-
-		res.status(200).json({
+		res.status(202).json({
 			status: "success",
-			result: newItem,
 			success: true,
-			message: "Item added to level successfully",
+			message: "Item is being processed in the background.",
 		});
 	} catch (error) {
 		return next(new ApiError("Something went wrong: " + error, 500));
 	}
 };
 
-// exports.addLevelToChapter = async (req, res, next) => {
+// without queu
+// exports.addItemToLevel = async (req, res, next) => {
 // 	try {
-// 		const { chapterId } = req.params;
-// 		const { title, order, sections } = req.body;
+// 		const { levelId } = req.params;
+// 		const { item } = req.body;
 
-// 		if (!title || !sections || !Array.isArray(sections)) {
-// 			return next(new ApiError("Invalid input data", 400));
+// 		if (!item) {
+// 			return next(new ApiError("Invalid input data, item is required", 400));
 // 		}
 
-// 		const level = await Level.create({
-// 			title,
-// 			chapter: chapterId,
-// 			order,
+// 		const section = await Section.findOne({ level: levelId });
+// 		if (!section) {
+// 			return next(new ApiError("Section not found", 404));
+// 		}
+
+// 		let fileUrl;
+// 		switch (item.type) {
+// 			case "video":
+// 				fileUrl = await saveAndDeleteVideo(null, item.fileBuffer, "videos");
+// 				break;
+// 			case "audio":
+// 				fileUrl = await saveAndDeleteAudio(null, item.fileBuffer, "audios");
+// 				break;
+// 			case "image":
+// 				fileUrl = await saveAndDeleteImage(null, item.fileBuffer, "images");
+// 				break;
+// 			case "pdf":
+// 				fileUrl = await saveAndDeletePdfFS(null, item.fileBuffer, "pdfs");
+// 				break;
+// 			case "text":
+// 				fileUrl = item.fileContent;
+// 				break;
+// 			default:
+// 				return next(new ApiError("Unsupported item type", 400));
+// 		}
+
+// 		const newItem = await Item.create({
+// 			...item,
+// 			file: fileUrl,
+// 			section: section._id,
 // 		});
 
-// 		await Chapter.findByIdAndUpdate(chapterId, {
-// 			$push: { levels: level._id },
-// 		});
+// 		section.items.push(newItem._id);
+// 		await section.save();
 
-// 		const sectionPromises = sections.map(async (sectionData, index) => {
-// 			const newSection = await Section.create({
-// 				title: "section " + index + 1,
-// 				level: level._id,
-// 				order: sectionData.order || index + 1,
-// 			});
-
-// 			if (sectionData.items && Array.isArray(sectionData.items)) {
-// 				const itemPromises = sectionData.items.map(async (itemData) => {
-// 					let fileUrl;
-
-// 					switch (itemData.type) {
-// 						case "video":
-// 							fileUrl = await saveAndDeleteVideo(
-// 								null,
-// 								itemData.fileBuffer,
-// 								"videos"
-// 							);
-// 							break;
-// 						case "audio":
-// 							fileUrl = await saveAndDeleteAudio(
-// 								null,
-// 								itemData.fileBuffer,
-// 								"audios"
-// 							);
-// 							break;
-// 						case "image":
-// 							fileUrl = await saveAndDeleteImage(
-// 								null,
-// 								itemData.fileBuffer,
-// 								"images"
-// 							);
-// 							break;
-// 						case "pdf":
-// 							fileUrl = await saveAndDeletePdfFS(
-// 								null,
-// 								itemData.fileBuffer,
-// 								"pdfs"
-// 							);
-// 							break;
-// 						case "text":
-// 							fileUrl = itemData.fileContent;
-// 							break;
-// 						default:
-// 							return next(new ApiError("Unsupported item type", 400));
-// 					}
-
-// 					const newItem = await Item.create({
-// 						...itemData,
-// 						file: fileUrl,
-// 						section: newSection._id,
-// 					});
-
-// 					return newItem;
-// 				});
-
-// 				const createdItems = await Promise.all(itemPromises);
-// 				newSection.items = createdItems.map((item) => item._id);
-// 			}
-
-// 			await newSection.save();
-// 			return newSection;
-// 		});
-
-// 		const createdSections = await Promise.all(sectionPromises);
-
-// 		level.sections = createdSections.map((section) => section._id);
-// 		await level.save();
-
-// 		res.status(201).json({
+// 		res.status(200).json({
 // 			status: "success",
-// 			result: level,
+// 			result: newItem,
 // 			success: true,
-// 			message: "new level created successfully",
+// 			message: "Item added to level successfully",
 // 		});
 // 	} catch (error) {
 // 		return next(new ApiError("Something went wrong: " + error, 500));
-// 	}
-// };
-
-// exports.addLevelToChapter = async (req, res, next) => {
-// 	const { chapterId } = req.params;
-// 	const { level, video, audio, image, pdf, text } = req.body;
-
-// 	try {
-// 		const newLevel = [];
-
-// 		if (video.base64) {
-// 			const uploadedVideo = await saveAndDeleteVideo(
-// 				null,
-// 				video.base64,
-// 				"videos"
-// 			);
-// 			newLevel.push({
-// 				type: "video",
-// 				file: uploadedVideo,
-// 				points: video.points,
-// 			});
-// 		}
-
-// 		if (audio.base64) {
-// 			const uploadedAudio = await saveAndDeleteAudio(
-// 				null,
-// 				audio.base64,
-// 				"audios"
-// 			);
-// 			newLevel.push({
-// 				type: "audio",
-// 				file: uploadedAudio,
-// 				points: audio.points,
-// 			});
-// 		}
-
-// 		if (image.base64) {
-// 			const uploadedImage = await saveAndDeleteImage(null, image.base64);
-// 			newLevel.push({
-// 				type: "image",
-// 				file: uploadedImage,
-// 				points: image.points,
-// 			});
-// 		}
-
-// 		if (pdf.base64) {
-// 			const uploadedPdf = await saveAndDeletePdfFS(null, pdf.base64, "pdfs");
-// 			newLevel.push({
-// 				type: "pdf",
-// 				file: uploadedPdf,
-// 				points: pdf.points,
-// 			});
-// 		}
-
-// 		if (text.text) {
-// 			newLevel.push({
-// 				type: "text",
-// 				file: text.text,
-// 				points: text.points,
-// 			});
-// 		}
-
-// 		const levelField = `level${level}`;
-// 		const updatedChapter = await Chapter.findByIdAndUpdate(
-// 			chapterId,
-// 			{
-// 				$push: { [levelField]: { $each: newLevel } },
-// 			},
-// 			{ new: true }
-// 		);
-
-// 		if (!updatedChapter) {
-// 			return next(new ApiError("Chapter not found", 404));
-// 		}
-
-// 		return res.status(201).json({
-// 			status: "success",
-// 			result: updatedChapter,
-// 			success: true,
-// 			message: `Level ${level} created successfully`,
-// 		});
-// 	} catch (error) {
-// 		return next(new ApiError(`Something went wrong: ${error.message}`, 500));
 // 	}
 // };
 
