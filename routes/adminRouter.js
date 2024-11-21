@@ -55,6 +55,7 @@ const {
 	deleteChapter,
 	updateChapter,
 	updateLevel,
+	updateLevelItem,
 } = require("../controllers/chapterController");
 
 const {
@@ -128,6 +129,8 @@ router.delete("/chapter/level/item/:itemId", deleteLevelItem);
 
 router.delete("/chapter/:chapterId", deleteChapter);
 router.patch("/chapter/update/:chapterId", updateChapter);
+
+router.patch("/chapter/level/item/update/:itemId", updateLevelItem);
 
 router.route("/category").post(createCategory).get(getCategories);
 

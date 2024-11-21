@@ -1021,7 +1021,6 @@ exports.deleteChapter = async (req, res, next) => {
 				for (const itemId of section.items) {
 					const item = await Item.findById(itemId);
 					if (item) {
-						// Delete associated file
 						if (item.file) {
 							const folderMap = {
 								video: "videos",
@@ -1036,7 +1035,6 @@ exports.deleteChapter = async (req, res, next) => {
 							}
 						}
 
-						// Delete the item
 						await item.deleteOne();
 					}
 				}
@@ -1046,6 +1044,11 @@ exports.deleteChapter = async (req, res, next) => {
 
 			await level.deleteOne();
 		}
+
+		await Diploma.updateMany(
+			{ chapters: chapterId },
+			{ $pull: { chapters: chapterId } }
+		);
 
 		await chapter.deleteOne();
 
@@ -1133,6 +1136,70 @@ exports.updateLevel = async (req, res, next) => {
 		});
 	} catch (error) {
 		console.error("Error updating level:", error);
+		return res.status(500).json({
+			success: false,
+			message: "Server error.",
+			error: error.message,
+		});
+	}
+};
+
+exports.updateLevelItem = async (req, res, next) => {
+	try {
+		const { title, type, fileBuffer, description, points } = req.body;
+		const { itemId } = req.params;
+
+		if (!itemId) {
+			return res.status(400).json({
+				success: false,
+				message: "Item ID is required.",
+			});
+		}
+
+		const item = await Item.findById(itemId);
+		if (!item) {
+			return res.status(404).json({
+				success: false,
+				message: "Item not found.",
+			});
+		}
+
+		const folderMap = {
+			video: "videos",
+			audio: "audios",
+			image: "images",
+			pdf: "pdfs",
+		};
+
+		const saveAndDeleteMap = {
+			video: saveAndDeleteVideo,
+			audio: saveAndDeleteAudio,
+			image: saveAndDeleteImage,
+			pdf: saveAndDeletePdfFS,
+		};
+
+		if (fileBuffer && type) {
+			const folder = folderMap[type];
+			const saveAndDelete = saveAndDeleteMap[type];
+
+			if (folder && saveAndDelete && fileBuffer !== "") {
+				item.file = await saveAndDelete(item.file, fileBuffer, folder);
+			}
+		}
+		if (title) item.title = title;
+		if (type) item.type = type;
+		if (description) item.description = description;
+		if (points) item.points = points;
+
+		await item.save();
+
+		return res.status(200).json({
+			status: "success",
+			success: true,
+			message: "Item updated successfully.",
+		});
+	} catch (error) {
+		console.error("Error updating item:", error);
 		return res.status(500).json({
 			success: false,
 			message: "Server error.",
