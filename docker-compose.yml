@@ -1,20 +1,72 @@
 version: "3.8"
 
 services:
+  mongo:
+    image: mongo:6.0
+    container_name: byt-mongo
+    ports:
+      - "27017:27017" # Expose MongoDB on default port
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: zhegazy409
+      MONGO_INITDB_ROOT_PASSWORD: wKaT32GesWjat5QD
+    networks:
+      - app-network
+    volumes:
+      - mongo-data:/data/db
+
+  mongo-express:
+    image: mongo-express:1.0
+    container_name: mongo-client
+    ports:
+      - "8081:8081" # Expose Mongo Express on port 8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: zhegazy409
+      ME_CONFIG_MONGODB_ADMINPASSWORD: wKaT32GesWjat5QD
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
+    depends_on:
+      - mongo
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7.0
+    container_name: byt-redis
+    ports:
+      - "6379:6379" # Expose Redis on the default port
+    networks:
+      - app-network
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "8001:8001" # Expose RedisInsight on port 8001
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
   byt-backend:
     build:
       context: ./
       dockerfile: Dockerfile
     container_name: byt-backend
     ports:
-      - "5005:5000" # Map backend port 5000 to host
+      - "5005:5000" # Expose Node.js app on port 5000
     environment:
-      - NODE_ENV=production # Or 'production'
-      - PORT=5000
+      MONGO_URI: mongodb://zhegazy409:wKaT32GesWjat5QD@mongo:27017/mydatabase
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      - mongo
+      - redis
     networks:
-      - byt-app-network
+      - app-network
 
 networks:
-  byt-app-network:
-    name: byt-app-network
+  app-network:
+    name: app-network
     driver: bridge
+
+volumes:
+  mongo-data:
