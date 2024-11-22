@@ -89,38 +89,49 @@ exports.addLevelToChapter = async (req, res, next) => {
 	}
 };
 
-// with queu
+// with queue
 exports.addItemToLevel = async (req, res, next) => {
 	try {
 		const { levelId } = req.params;
 		const { item } = req.body;
 
-		if (!item) {
-			return next(new ApiError("Invalid input data, item is required", 400));
-		}
-
-		const section = await Section.findOne({ level: levelId });
-		if (!section) {
-			return next(new ApiError("Section not found", 404));
-		}
-
-		await itemQueue.add({
-			item,
-			levelId,
-			sectionId: section._id,
+		const newItem = await Item.create({
+			...item,
+			file: null,
+			section: null,
 		});
+
+		itemQueue
+			.add({
+				itemId: newItem._id,
+				levelId,
+				fileBuffer: item.fileBuffer,
+			})
+			.catch((err) => console.error("Queue Error: ", err));
 
 		res.status(202).json({
 			status: "success",
 			success: true,
+			result: {
+				_id: newItem._id,
+				title: newItem.title,
+				order: newItem.order,
+				type: newItem.type,
+				points: newItem.points,
+				file: newItem.file,
+				size: newItem.size,
+				description: newItem.description,
+				isUploaded: false,
+			},
 			message: "Item is being processed in the background.",
 		});
 	} catch (error) {
-		return next(new ApiError("Something went wrong: " + error, 500));
+		console.error("Error adding item to level:", error);
+		return next(new ApiError("Something went wrong: " + error.message, 500));
 	}
 };
 
-// without queu
+// without queue
 // exports.addItemToLevel = async (req, res, next) => {
 // 	try {
 // 		const { levelId } = req.params;
@@ -363,7 +374,7 @@ exports.getLevelItems = async (req, res, next) => {
 				select: "items",
 				populate: {
 					path: "items",
-					select: "title order type points file size description",
+					select: "title order type points file size description isUploaded",
 					options: { sort: { order: 1 } },
 				},
 			});

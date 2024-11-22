@@ -15,22 +15,24 @@ const itemQueue = new Queue("item-processing", {
 });
 
 itemQueue.process(async (job) => {
-	const { levelId, sectionId, item } = job.data;
+	const { itemId, levelId, fileBuffer } = job.data;
 
 	try {
+		const item = await Item.findById(itemId);
+
 		let fileUrl;
 		switch (item.type) {
 			case "video":
-				fileUrl = await saveAndDeleteVideo(null, item.fileBuffer, "videos");
+				fileUrl = await saveAndDeleteVideo(null, fileBuffer, "videos");
 				break;
 			case "audio":
-				fileUrl = await saveAndDeleteAudio(null, item.fileBuffer, "audios");
+				fileUrl = await saveAndDeleteAudio(null, fileBuffer, "audios");
 				break;
 			case "image":
-				fileUrl = await saveAndDeleteImage(null, item.fileBuffer, "images");
+				fileUrl = await saveAndDeleteImage(null, fileBuffer, "images");
 				break;
 			case "pdf":
-				fileUrl = await saveAndDeletePdfFS(null, item.fileBuffer, "pdfs");
+				fileUrl = await saveAndDeletePdfFS(null, fileBuffer, "pdfs");
 				break;
 			case "text":
 				fileUrl = item.fileContent;
@@ -39,14 +41,17 @@ itemQueue.process(async (job) => {
 				throw new Error("Unsupported item type");
 		}
 
-		const newItem = await Item.create({
-			...item,
-			file: fileUrl,
-			section: sectionId,
-		});
+		const section = await Section.findOne({ level: levelId });
+		if (!section) {
+			return next(new ApiError("Section not found", 404));
+		}
 
-		const section = await Section.findById(sectionId);
-		section.items.push(newItem._id);
+		item.file = fileUrl;
+		item.isUploaded = true;
+		item.section = section._id;
+		await item.save();
+
+		section.items.push(item._id);
 		await section.save();
 
 		console.log(`Item processed and added to level ${levelId}.`);

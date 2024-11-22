@@ -10,10 +10,11 @@ const ItemSchema = new mongoose.Schema(
 			required: true,
 			enum: ["video", "pdf", "image", "text", "audio", "quiz"],
 		},
-		file: String,
+		file: { type: String, default: null },
 		size: String,
 		points: { type: Number, default: 0 },
-		section: { type: mongoose.Schema.ObjectId, ref: "Section" },
+		section: { type: mongoose.Schema.ObjectId, ref: "Section", default: null },
+		isUploaded: { type: Boolean, default: false },
 	},
 	{ timestamps: true }
 );
