@@ -30,7 +30,7 @@ services:
     depends_on:
       - byt-mongo
     networks:
-      - app-network
+      - byt-network
 
   byt-redis:
     image: redis:7.0
