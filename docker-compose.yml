@@ -1,16 +1,16 @@
 version: "3.8"
 
 services:
-  mongo:
+  byt-mongo:
     image: mongo:6.0
     container_name: byt-mongo
     ports:
       - "27017:27017" # Expose MongoDB on default port
     environment:
-      MONGO_INITDB_ROOT_USERNAME: zhegazy409
+      MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: wKaT32GesWjat5QD
     networks:
-      - app-network
+      - byt-network
     volumes:
       - mongo-data:/data/db
 
@@ -20,31 +20,35 @@ services:
     ports:
       - "8081:8081" # Expose Mongo Express on port 8081
     environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: zhegazy409
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: wKaT32GesWjat5QD
-      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
+      ME_CONFIG_MONGODB_SERVER: byt-mongo
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_MONGODB_URL: mongodb://root:wKaT32GesWjat5QD@byt-mongo:27017/?authSource=admin
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: true
+      ME_CONFIG_MONGODB_LOGGING: true
     depends_on:
-      - mongo
+      - byt-mongo
     networks:
       - app-network
 
-  redis:
+  byt-redis:
     image: redis:7.0
     container_name: byt-redis
     ports:
       - "6379:6379" # Expose Redis on the default port
     networks:
-      - app-network
+      - byt-network
 
   redisinsight:
     image: redis/redisinsight:latest
     container_name: redisinsight
     ports:
-      - "8001:8001" # Expose RedisInsight on port 8001
+      - "8024:8001" # Expose RedisInsight on port 8001
     depends_on:
-      - redis
+      - byt-redis
     networks:
-      - app-network
+      - byt-network
 
   byt-backend:
     build:
@@ -52,21 +56,22 @@ services:
       dockerfile: Dockerfile
     container_name: byt-backend
     ports:
-      - "5005:5000" # Expose Node.js app on port 5000
+      - "5000:5000" # Expose Node.js app on port 5000
     environment:
-      MONGO_URI: mongodb://zhegazy409:wKaT32GesWjat5QD@mongo:27017/mydatabase
+      DB_URI: mongodb://root:wKaT32GesWjat5QD@byt-mongo:27017/bytdb?authSource=admin
       REDIS_HOST: redis
       REDIS_PORT: 6379
     depends_on:
-      - mongo
-      - redis
+      - byt-mongo
+      - byt-redis
     networks:
-      - app-network
+      - byt-network
 
 networks:
-  app-network:
-    name: app-network
+  byt-network:
+    name: byt-network
     driver: bridge
 
-volumes:
+volumes: # enable persistence of database data across container restart
   mongo-data:
+    driver: local
