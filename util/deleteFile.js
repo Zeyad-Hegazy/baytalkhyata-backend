@@ -1,3 +1,6 @@
+const path = require("path");
+const fs = require("fs");
+
 const deleteFile = async (filePath, folder) => {
 	try {
 		const fullPath = path.join("uploads", folder, filePath);
