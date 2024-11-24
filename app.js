@@ -70,13 +70,13 @@ app.use((req, res, next) => {
 	next();
 });
 
-app.get('/', (req, res) => {
-	res.json({ status: 'success', message: 'Root route is working' });
-  });
+app.get("/", (req, res) => {
+	res.json({ status: "success", message: "Root route is working" });
+});
 
-app.get('/mallah', (req, res) => {
-	res.json({ status: 'success', message: 'Root route is working' });
-  });
+app.get("/mallah", (req, res) => {
+	res.json({ status: "success", message: "Root route is working" });
+});
 
 console.log(`mode: ${process.env.NODE_ENV}`);
 if (process.env.NODE_ENV === "development") {
@@ -90,7 +90,7 @@ if (process.env.NODE_ENV === "development") {
 if (process.env.NODE_ENV === "development") {
 	app.use((req, res, next) => {
 		const protocol = "http";
-		const hostname = "localhost:3000";
+		const hostname = "localhost:5000";
 		res.locals.baseUrl = `${protocol}://${hostname}`;
 		next();
 	});

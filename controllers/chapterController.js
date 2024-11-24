@@ -102,14 +102,22 @@ exports.addItemToLevel = async (req, res, next) => {
 		});
 
 		itemQueue
-			.add({
-				itemId: newItem._id,
-				levelId,
-				fileBuffer: item.fileBuffer,
-			})
+			.add(
+				{
+					itemId: newItem._id,
+					levelId,
+					fileBuffer: item.fileBuffer,
+				},
+				{
+					attempts: 3,
+					backoff: 5000,
+					removeOnComplete: true,
+					removeOnFail: false,
+				}
+			)
 			.catch((err) => console.error("Queue Error: ", err));
 
-		res.status(202).json({
+		res.status(201).json({
 			status: "success",
 			success: true,
 			result: {
@@ -1204,108 +1212,3 @@ exports.completeLevel = async (req, res, next) => {
 			.json({ message: "An error occurred while completing the level" });
 	}
 };
-
-// Controller to stream all files from one level of a chapter
-
-// Controller to stream all files from one level of a chapter
-
-// exports.streamChapterLevelFiles = async (req, res) => {
-// 	try {
-// 		const { chapterId, levelType, fileType } = req.params;
-
-// 		// Fetch the chapter by ID
-// 		const chapter = await Chapter.findById(chapterId).exec();
-
-// 		// Check if chapter exists
-// 		if (!chapter) {
-// 			return res.status(404).json({ message: "Chapter not found" });
-// 		}
-
-// 		// Determine the correct level array
-// 		let levelArray;
-// 		switch (levelType) {
-// 			case "levelOne":
-// 				levelArray = chapter.levelOne;
-// 				break;
-// 			case "levelTwo":
-// 				levelArray = chapter.levelTwo;
-// 				break;
-// 			case "levelThree":
-// 				levelArray = chapter.levelThree;
-// 				break;
-// 			case "levelFour":
-// 				levelArray = chapter.levelFour;
-// 				break;
-// 			default:
-// 				return res.status(400).json({ message: "Invalid level type" });
-// 		}
-
-// 		// Filter the files based on the file type provided in params
-// 		const files = levelArray.filter((item) => item.type === fileType);
-
-// 		// Check if no files were found of the specified type
-// 		if (files.length === 0) {
-// 			return res
-// 				.status(404)
-// 				.json({ message: `No valid files of type ${fileType} to stream` });
-// 		}
-
-// 		// Assuming there's only one file type requested, set the content type accordingly
-// 		let contentType;
-// 		switch (fileType) {
-// 			case "video":
-// 				contentType = "video/mp4"; // Adjust based on your actual video format
-// 				break;
-// 			case "pdf":
-// 				contentType = "application/pdf";
-// 				break;
-// 			case "image":
-// 				contentType = "image/jpeg"; // Adjust format as needed
-// 				break;
-// 			case "audio":
-// 				contentType = "audio/mpeg"; // Adjust format as needed
-// 				break;
-// 			case "text":
-// 				contentType = "text/plain"; // Adjust if your text has a different format
-// 				break;
-// 			default:
-// 				return res.status(400).json({ message: "Unsupported file type" });
-// 		}
-
-// 		// Stream each file to the client
-// 		files.forEach((file) => {
-// 			if (file.type === "text") {
-// 				return res.status(200).json({ result: file.file });
-// 			}
-
-// 			const filePath = path.resolve(
-// 				__dirname,
-// 				"../uploads",
-// 				file.type + "s",
-// 				file.file
-// 			);
-
-// 			// Check if file exists
-// 			if (!fs.existsSync(filePath)) {
-// 				return res
-// 					.status(404)
-// 					.json({ message: `File not found: ${file.file}` });
-// 			}
-
-// 			// Set content type and stream the file
-// 			res.setHeader("Content-Type", contentType);
-// 			const fileStream = fs.createReadStream(filePath);
-// 			fileStream.pipe(res);
-
-// 			// Handle stream errors
-// 			fileStream.on("error", (error) => {
-// 				res
-// 					.status(500)
-// 					.json({ message: "Error streaming file", error: error.message });
-// 			});
-// 		});
-// 	} catch (error) {
-// 		// General error handling
-// 		res.status(500).json({ message: "Server error", error: error.message });
-// 	}
-// };
