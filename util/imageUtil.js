@@ -15,9 +15,9 @@ exports.deleteImage = async (imagePath) => {
 
 const saveBase64Image = async (base64String, isImage) => {
 	try {
-		if (base64String.startsWith("data:image")) {
-			base64String = base64String.split(",")[1];
-		}
+		// if (base64String.startsWith("data:image")) {
+		// 	base64String = base64String.split(",")[1];
+		// }
 		const imageBuffer = Buffer.from(base64String, "base64");
 
 		let fileExtension;

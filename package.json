@@ -5,7 +5,7 @@
 	"main": "server.js",
 	"scripts": {
 		"start": "node server.js",
-		"start:dev": "nodemon server.js",
+		"start:dev": "nodemon --exec \"node --max-old-space-size=4076\" server.js",
 		"start:prod": "set NODE_ENV=production && node server.js",
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"debug": "ndb server.js",

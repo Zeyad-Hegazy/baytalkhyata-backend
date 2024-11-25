@@ -22,6 +22,8 @@ const Quiz = require("../models/QuizModel");
 
 const itemQueue = require("../queues/itemQueue");
 
+const multer = require("multer");
+
 exports.createChapter = async (req, res, next) => {
 	const { title, diploma } = req.body;
 
@@ -89,55 +91,71 @@ exports.addLevelToChapter = async (req, res, next) => {
 	}
 };
 
+const upload = multer({
+	storage: multer.memoryStorage(),
+});
+
 // with queue
-exports.addItemToLevel = async (req, res, next) => {
-	try {
-		const { levelId } = req.params;
-		const { item } = req.body;
+exports.addItemToLevel = [
+	upload.single("file"),
+	async (req, res, next) => {
+		try {
+			const { levelId } = req.params;
+			const { title, type, points, description, size } = req.body;
+			const fileBuffer = req.file?.buffer;
+			console.log(fileBuffer);
 
-		const newItem = await Item.create({
-			...item,
-			file: null,
-			section: null,
-		});
+			if (!fileBuffer) {
+				return next(new ApiError("File is required", 400));
+			}
 
-		itemQueue
-			.add(
-				{
-					itemId: newItem._id,
-					levelId,
-					fileBuffer: item.fileBuffer,
+			const newItem = await Item.create({
+				title,
+				type,
+				points,
+				description,
+				size,
+				file: null,
+				section: null,
+			});
+
+			itemQueue
+				.add(
+					{
+						itemId: newItem._id,
+						levelId,
+						fileBuffer,
+					},
+					{
+						attempts: 3,
+						backoff: 5000,
+						removeOnComplete: true,
+						removeOnFail: false,
+					}
+				)
+				.catch((err) => console.error("Queue Error:", err));
+
+			res.status(201).json({
+				status: "success",
+				success: true,
+				result: {
+					_id: newItem._id,
+					title: newItem.title,
+					type: newItem.type,
+					points: newItem.points,
+					file: newItem.file,
+					size: newItem.size,
+					description: newItem.description,
+					isUploaded: false,
 				},
-				{
-					attempts: 3,
-					backoff: 5000,
-					removeOnComplete: true,
-					removeOnFail: false,
-				}
-			)
-			.catch((err) => console.error("Queue Error: ", err));
-
-		res.status(201).json({
-			status: "success",
-			success: true,
-			result: {
-				_id: newItem._id,
-				title: newItem.title,
-				order: newItem.order,
-				type: newItem.type,
-				points: newItem.points,
-				file: newItem.file,
-				size: newItem.size,
-				description: newItem.description,
-				isUploaded: false,
-			},
-			message: "Item is being processed in the background.",
-		});
-	} catch (error) {
-		console.error("Error adding item to level:", error);
-		return next(new ApiError("Something went wrong: " + error.message, 500));
-	}
-};
+				message: "Item is being processed in the background.",
+			});
+		} catch (error) {
+			console.error("Error adding item to level:", error);
+			return next(new ApiError("Something went wrong: " + error.message, 500));
+		}
+	},
+];
 
 // without queue
 // exports.addItemToLevel = async (req, res, next) => {

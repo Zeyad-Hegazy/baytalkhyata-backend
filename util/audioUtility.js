@@ -13,10 +13,10 @@ const deleteFile = async (audioPath) => {
 const saveAudioFile = async (base64String, folder) => {
 	try {
 		// Define the base64 prefix for audio files (assuming mp3 format)
-		const base64Prefix = "data:audio/mp3;base64,";
-		if (base64String.startsWith(base64Prefix)) {
-			base64String = base64String.replace(base64Prefix, "");
-		}
+		// const base64Prefix = "data:audio/mp3;base64,";
+		// if (base64String.startsWith(base64Prefix)) {
+		// 	base64String = base64String.replace(base64Prefix, "");
+		// }
 
 		const fileBuffer = Buffer.from(base64String, "base64");
 		const uniqueFilename = `audio-${Date.now()}.mp3`;
