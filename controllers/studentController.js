@@ -421,12 +421,14 @@ exports.updateProfile = async (req, res, next) => {
 			student.password = newPassword || student.password;
 		}
 
-		if (student.image === "user-profile.png") {
-			const newImage = await saveAndDeleteImage(null, image, true);
-			student.image = newImage;
-		} else {
-			const newImage = await saveAndDeleteImage(student.image, image, true);
-			student.image = newImage;
+		if (image) {
+			if (student.image === "user-profile.png") {
+				const newImage = await saveAndDeleteImage(null, image, true);
+				student.image = newImage;
+			} else {
+				const newImage = await saveAndDeleteImage(student.image, image, true);
+				student.image = newImage;
+			}
 		}
 
 		student.fullName = fullName || student.fullName;
