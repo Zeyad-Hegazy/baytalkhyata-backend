@@ -103,7 +103,6 @@ exports.addItemToLevel = [
 			const { levelId } = req.params;
 			const { title, type, points, description, size } = req.body;
 			const fileBuffer = req.file?.buffer;
-			console.log(fileBuffer);
 
 			if (!fileBuffer) {
 				return next(new ApiError("File is required", 400));
@@ -124,7 +123,7 @@ exports.addItemToLevel = [
 					{
 						itemId: newItem._id,
 						levelId,
-						fileBuffer,
+						fileBuffer: fileBuffer.toString("base64"),
 					},
 					{
 						attempts: 3,

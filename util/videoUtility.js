@@ -10,13 +10,19 @@ const deleteFile = async (videoPath) => {
 	}
 };
 
-const saveFile = async (fileBuffer, folder) => {
+const saveFile = async (base64String, folder) => {
 	try {
-		const bufferObj = new Buffer(fileBuffer);
-		const uniqueFilename = `video-${Date.now()}-video.mp4`;
+		const base64Prefix = "data:video/mp4;base64,";
+		if (base64String.startsWith(base64Prefix)) {
+			base64String = base64String.replace(base64Prefix, "");
+		}
+		const fileBuffer = Buffer.from(base64String, "base64");
+		const uniqueFilename = `video-${Date.now()}.mp4`;
 		const filePath = path.join("uploads", folder, uniqueFilename);
 
-		await fs.promises.writeFile(filePath, bufferObj);
+		const writeStream = fs.createWriteStream(filePath);
+		writeStream.write(fileBuffer);
+		writeStream.end();
 
 		return uniqueFilename;
 	} catch (error) {
